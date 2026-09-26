@@ -11,7 +11,7 @@ export function Header({ compact, onLeave }: { compact: boolean; onLeave?: () =>
     <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
       {compact ? (
         <div className="logo-text text-2xl sm:text-3xl" style={{ WebkitTextStrokeWidth: 5 }}>
-          Kręć i Zgaduj
+          Spinshot
         </div>
       ) : (
         <span />

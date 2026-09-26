@@ -11,7 +11,7 @@ const authorizedParties = process.env.CLERK_AUTHORIZED_PARTIES?.split(",").map((
 const clerk = clerkEnabled ? createClerkClient({ secretKey, publishableKey: publishableKey! }) : null;
 
 // Dane gry trzymamy w publicMetadata pod własnym kluczem, żeby nie kolidować z innymi aplikacjami na tym samym Clerku.
-const META_KEY = "krecIZgaduj";
+const META_KEY = "spinshot";
 
 interface GameMeta {
   avatar?: Avatar;

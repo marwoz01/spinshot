@@ -3,7 +3,7 @@ import { randomAvatar, sanitizeAvatar } from "../shared/avatar.ts";
 import type { ClientProfile, UserStats } from "../shared/types.ts";
 import { useAuthInfo } from "./auth.tsx";
 
-const KEY = "kiz:profile";
+const KEY = "spinshot:profile";
 
 function loadLocal(): ClientProfile {
   try {

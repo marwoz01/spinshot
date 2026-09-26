@@ -20,18 +20,18 @@ function storage(kind: "local" | "session"): Storage | null {
 /** Identyfikator karty — pozwala wrócić do pokoju po odświeżeniu, a dwie karty to dwóch graczy. */
 function sessionId(): string {
   const store = storage("session");
-  let id = store?.getItem("kiz:sid");
+  let id = store?.getItem("spinshot:sid");
   if (!id) {
     id = crypto.randomUUID();
-    store?.setItem("kiz:sid", id);
+    store?.setItem("spinshot:sid", id);
   }
   return id;
 }
 
 function rememberRoom(code: string | null) {
   const store = storage("session");
-  if (code) store?.setItem("kiz:room", code);
-  else store?.removeItem("kiz:room");
+  if (code) store?.setItem("spinshot:room", code);
+  else store?.removeItem("spinshot:room");
   const url = new URL(window.location.href);
   if (code) url.searchParams.set("pokoj", code);
   else url.searchParams.delete("pokoj");
@@ -101,7 +101,7 @@ export function useGame(profile: ClientProfile): GameApi {
   const tokenRef = useRef(auth.getToken);
   tokenRef.current = auth.getToken;
   const youRef = useRef<string | null>(null);
-  const codeRef = useRef<string | null>(storage("session")?.getItem("kiz:room") ?? null);
+  const codeRef = useRef<string | null>(storage("session")?.getItem("spinshot:room") ?? null);
 
   const socket: GameSocket = useMemo(
     () =>

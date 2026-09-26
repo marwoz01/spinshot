@@ -1,9 +1,9 @@
 {
-  "name": "krec-i-zgaduj",
+  "name": "spinshot",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Kręć i Zgaduj — imprezowa gra przeglądarkowa: kręć kołem, odkrywaj litery i zgaduj podchwytliwe hasła.",
+  "description": "Spinshot: imprezowa gra przeglądarkowa. Kręć kołem, odkrywaj litery i zgaduj hasła.",
   "engines": {
     "node": ">=22.18.0"
   },

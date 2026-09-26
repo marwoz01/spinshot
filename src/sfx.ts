@@ -4,7 +4,7 @@ let muted = readMuted();
 
 function readMuted(): boolean {
   try {
-    return localStorage.getItem("kiz:muted") === "1";
+    return localStorage.getItem("spinshot:muted") === "1";
   } catch {
     return false;
   }
@@ -17,7 +17,7 @@ export function isMuted(): boolean {
 export function setMuted(value: boolean): void {
   muted = value;
   try {
-    localStorage.setItem("kiz:muted", value ? "1" : "0");
+    localStorage.setItem("spinshot:muted", value ? "1" : "0");
   } catch {
     // brak dostępu do localStorage — ustawienie tylko na tę sesję
   }

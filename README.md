@@ -1,4 +1,4 @@
-# Kręć i Zgaduj
+# Spinshot
 
 Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekalni, kręcicie kołem, odkrywacie litery i zgadujecie hasła: przysłowia, powiedzenia, tytuły filmów, piosenek i wiele innych.
 
@@ -73,7 +73,7 @@ Bez kluczy gra działa tylko w trybie gościa. Żeby włączyć konta:
 
 Gra potrzebuje stałych połączeń WebSocket, więc nie pójdzie na Vercelu. Nada się na przykład [Render](https://render.com) (darmowy plan), Railway albo Fly.io.
 
-Na Renderze wybierz **New → Blueprint**, wskaż to repo, a plik `render.yaml` skonfiguruje resztę. W panelu uzupełnij tylko klucze Clerka. W `CLERK_AUTHORIZED_PARTIES` możesz podać adres swojej gry, na przykład `https://krec-i-zgaduj.onrender.com`.
+Na Renderze wybierz **New → Blueprint**, wskaż to repo, a plik `render.yaml` skonfiguruje resztę. W panelu uzupełnij tylko klucze Clerka. W `CLERK_AUTHORIZED_PARTIES` możesz podać adres swojej gry, na przykład `https://spinshot.onrender.com`.
 
 Stan pokojów jest trzymany w pamięci serwera. Restart albo uśpienie darmowej instancji kończy trwające gry, ale konta i statystyki zostają w Clerku.
 

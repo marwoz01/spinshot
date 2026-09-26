@@ -27,7 +27,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
   return (
     <div className="mx-auto flex max-w-5xl flex-col items-center gap-6">
       <div className="anim-float flex flex-col items-center pt-2 text-center">
-        <h1 className="logo-text text-[clamp(2.6rem,9vw,5.2rem)] leading-none">Kręć i Zgaduj</h1>
+        <h1 className="logo-text text-[clamp(2.6rem,9vw,5.2rem)] leading-none">Spinshot</h1>
         <p className="mt-4 max-w-md text-lg font-extrabold text-white/90 drop-shadow-[0_2px_0_rgba(42,22,80,.6)]">
           Kręć kołem, odkrywaj litery i nie daj się złapać na podchwytliwe hasło!
         </p>

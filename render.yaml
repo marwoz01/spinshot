@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: krec-i-zgaduj
+    name: spinshot
     runtime: node
     plan: free
     buildCommand: npm ci --include=dev && npm run build
