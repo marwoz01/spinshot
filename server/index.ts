@@ -5,13 +5,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express, { type Request, type Response } from "express";
 import { Server, type Socket } from "socket.io";
-import type { Ack, ClientProfile, ClientToServer, ServerToClient } from "../shared/types.ts";
+import type { Ack, ClientProfile, ClientToServer, ServerToClient, UserStats } from "../shared/types.ts";
 import { clerkEnabled, getProfile, getRanking, publishableKey, recordGame, saveProfile, verifySession } from "./auth.ts";
 import { GameError, Room, type RoomHooks } from "./room.ts";
 
 interface SocketData {
   sessionId: string;
   userId: string | null;
+  /** Statystyki konta z chwili połączenia (odświeżane po grze); null dla gościa. */
+  stats: UserStats | null;
   roomCode: string | null;
   playerId: string | null;
 }
@@ -51,9 +53,17 @@ const hooks: RoomHooks = {
   onFx(room, fx) {
     io.to(room.code).emit("fx", fx);
   },
-  onGameOver(_room, results) {
+  onGameOver(room, results) {
     for (const result of results) {
-      recordGame(result).catch((err) => console.error("Nie udało się zapisać statystyk:", err));
+      recordGame(result)
+        .then((stats) => {
+          // Nowe wyniki od razu odblokowują nagrody, bez ponownego łączenia.
+          room.setUserStats(result.userId, stats);
+          for (const socket of io.sockets.sockets.values() as Iterable<GameSocket>) {
+            if (socket.data.userId === result.userId) socket.data.stats = stats;
+          }
+        })
+        .catch((err) => console.error("Nie udało się zapisać statystyk:", err));
     }
   },
   onEmpty(room) {
@@ -131,7 +141,9 @@ io.use(async (socket: GameSocket, next) => {
   if (typeof sessionId !== "string" || !/^[\w-]{8,64}$/.test(sessionId)) {
     return next(new Error("Brak identyfikatora sesji."));
   }
-  socket.data = { sessionId, userId: await verifySession(token), roomCode: null, playerId: null };
+  const userId = await verifySession(token);
+  const stats = userId ? await getProfile(userId).then((p) => p.stats).catch(() => null) : null;
+  socket.data = { sessionId, userId, stats, roomCode: null, playerId: null };
   next();
 });
 
@@ -171,7 +183,7 @@ function enterRoom(socket: GameSocket, room: Room, profile: ClientProfile): stri
   if (socket.data.roomCode && socket.data.roomCode !== room.code) leaveCurrentRoom(socket);
   socket.join(room.code);
   socket.data.roomCode = room.code;
-  const player = room.join(socket.data.sessionId, socket.id, socket.data.userId, profile);
+  const player = room.join(socket.data.sessionId, socket.id, socket.data.userId, profile, socket.data.stats);
   socket.data.playerId = player.id;
   hooks.onChange(room);
   return player.id;

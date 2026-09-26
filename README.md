@@ -38,6 +38,7 @@ Host ustawia limit czasu na ruch: 15, 30, 45 albo 60 s, albo bez limitu. Gdy cza
 ## Konta i postacie
 
 - **Gość**: wpisujesz nick i od razu grasz. Postać zapisuje się w przeglądarce.
+- **Postać**: kreator w stylu awatarów z Reddita. Kształt i kolor, oczy, buzia, dodatki na twarz, fryzura z kolorem, nakrycie głowy, strój z kolorem i akcesoria. Część elementów to **nagrody za wyniki na koncie**: złoty medal (pierwsza wygrana), oczy-serduszka (5 gier), peleryna (5 wygranych), garnitur (20 gier), rogi (10 wygranych), aureola (25 odgadniętych haseł) i hełm wikinga (50 pkt). Serwer pilnuje, żeby nikt nie założył nagrody bez wyników.
 - **Konto**: logowanie przez [Clerk](https://clerk.com) (e-mail i hasło albo Google). Postać i statystyki (gry, wygrane, odgadnięte hasła, punkty) są zapisane na koncie w `publicMetadata` Clerka, więc gra nie potrzebuje bazy danych. Pod ikoną pucharu jest **ranking** zalogowanych graczy (najpierw punkty, potem wygrane).
 - **Kreator postaci**: 10 kolorów, 3 kształty, 6 rodzajów oczu, 6 buzi i 7 nakryć głowy (albo żadne). Jest też przycisk losowania.
 

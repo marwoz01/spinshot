@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { randomAvatar, sanitizeAvatar } from "../shared/avatar.ts";
+import { lockAvatar, randomAvatar, sanitizeAvatar } from "../shared/avatar.ts";
 import type { ClientProfile, UserStats } from "../shared/types.ts";
 import { useAuthInfo } from "./auth.tsx";
 
@@ -43,6 +43,7 @@ export function useProfile() {
   useEffect(() => {
     if (!auth.signedIn) {
       setStats(null);
+      if (auth.loaded) setProfile((prev) => ({ ...prev, avatar: lockAvatar(prev.avatar, null) }));
       return;
     }
     let cancelled = false;
@@ -61,7 +62,7 @@ export function useProfile() {
     return () => {
       cancelled = true;
     };
-  }, [auth.signedIn, auth.userId]);
+  }, [auth.signedIn, auth.loaded, auth.userId]);
 
   const updateProfile = useCallback(
     (next: ClientProfile) => {

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { sanitizeAvatar } from "../shared/avatar.ts";
 import { normalizeAnswer } from "../shared/letters.ts";
 import type { Fx } from "../shared/types.ts";
 import { rotationFor, segmentAt, SPIN_MS, WHEEL, type SegmentKind } from "../shared/wheel.ts";
 import { AWAY_TURN_MS, ROUND_END_MS, Room, SPEED_INTRO_MS, SPEED_LOCK_MS, SPEED_POOL, SPEED_REVEAL_MS, SPEED_TAIL_MS, type GameResult } from "../server/room.ts";
 
-const avatar = { color: 0, shape: 0, eyes: 0, mouth: 0, hat: 0 };
+const avatar = sanitizeAvatar({ color: 0, shape: 0, eyes: 0, mouth: 0, hat: 0 });
 
 function setup(names = ["Ala", "Bartek", "Celina"], turnSeconds = 30) {
   const fx: Fx[] = [];

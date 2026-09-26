@@ -1,5 +1,5 @@
 import { createClerkClient, verifyToken } from "@clerk/backend";
-import { sanitizeAvatar, type Avatar } from "../shared/avatar.ts";
+import { lockAvatar, sanitizeAvatar, type Avatar } from "../shared/avatar.ts";
 import { EMPTY_STATS, MAX_NAME, type Ranking, type RankingEntry, type UserStats } from "../shared/types.ts";
 import type { GameResult } from "./room.ts";
 
@@ -47,22 +47,28 @@ async function readMeta(userId: string) {
 
 export async function getProfile(userId: string): Promise<Profile> {
   const { user, meta } = await readMeta(userId);
+  const stats = { ...EMPTY_STATS, ...meta.stats };
   return {
-    avatar: meta.avatar ? sanitizeAvatar(meta.avatar) : null,
+    avatar: meta.avatar ? lockAvatar(sanitizeAvatar(meta.avatar), stats) : null,
     nick: meta.nick ?? user.username ?? user.firstName ?? null,
-    stats: { ...EMPTY_STATS, ...meta.stats },
+    stats,
   };
 }
 
 export async function saveProfile(userId: string, input: { avatar?: unknown; nick?: unknown }): Promise<void> {
   const patch: GameMeta = {};
-  if (input.avatar !== undefined) patch.avatar = sanitizeAvatar(input.avatar);
+  if (input.avatar !== undefined) {
+    // Nagrody z postaci zostają tylko, jeśli konto ma już wymagane wyniki.
+    const { meta } = await readMeta(userId);
+    patch.avatar = lockAvatar(sanitizeAvatar(input.avatar), { ...EMPTY_STATS, ...meta.stats });
+  }
   if (typeof input.nick === "string") patch.nick = input.nick.replace(/\s+/g, " ").trim().slice(0, MAX_NAME);
   await clerk!.users.updateUserMetadata(userId, { publicMetadata: { [META_KEY]: patch } });
   rankingCache = null;
 }
 
-export async function recordGame(result: GameResult): Promise<void> {
+/** Dopisuje wynik gry do statystyk konta i zwraca nowe statystyki. */
+export async function recordGame(result: GameResult): Promise<UserStats> {
   const { meta } = await readMeta(result.userId);
   const stats = { ...EMPTY_STATS, ...meta.stats };
   const next: UserStats = {
@@ -75,6 +81,7 @@ export async function recordGame(result: GameResult): Promise<void> {
   const nick = meta.nick ?? result.name;
   await clerk!.users.updateUserMetadata(result.userId, { publicMetadata: { [META_KEY]: { stats: next, nick } } });
   rankingCache = null;
+  return next;
 }
 
 // ───────────────────────── ranking ─────────────────────────

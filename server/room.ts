@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { sanitizeAvatar, type Avatar } from "../shared/avatar.ts";
+import { lockAvatar, sanitizeAvatar, type Avatar } from "../shared/avatar.ts";
 import { isLetter, isVowel, normalizeAnswer } from "../shared/letters.ts";
 import {
   DEFAULT_SETTINGS,
@@ -22,6 +22,7 @@ import {
   type TurnPhase,
   type TurnState,
   type UsedLetter,
+  type UserStats,
 } from "../shared/types.ts";
 import { rotationFor, SPIN_MS, WHEEL } from "../shared/wheel.ts";
 import { pickPassword } from "./passwords.ts";
@@ -49,6 +50,8 @@ export interface Player {
   sessionId: string;
   socketId: string | null;
   userId: string | null;
+  /** Statystyki konta (null = gość); decydują o odblokowanych elementach postaci. */
+  stats: UserStats | null;
   name: string;
   avatar: Avatar;
   score: number;
@@ -122,12 +125,13 @@ export class Room {
   }
 
   /** Dołącza nowego gracza albo przywraca istniejącego (ten sam sessionId). */
-  join(sessionId: string, socketId: string, userId: string | null, profile: ClientProfile): Player {
+  join(sessionId: string, socketId: string, userId: string | null, profile: ClientProfile, stats: UserStats | null = null): Player {
     const existing = this.players.find((p) => p.sessionId === sessionId);
     if (existing) {
       existing.connected = true;
       existing.socketId = socketId;
       existing.userId = userId;
+      existing.stats = stats;
       this.applyProfile(existing, profile);
       this.clearLeaveTimer(existing.id);
       this.clearEmptyTimer();
@@ -145,6 +149,7 @@ export class Room {
       sessionId,
       socketId,
       userId,
+      stats,
       name: "",
       avatar: sanitizeAvatar(null),
       score: 0,
@@ -257,7 +262,12 @@ export class Room {
         .trim()
         .slice(0, MAX_NAME) || "Gracz";
     player.name = this.uniqueName(base, player.id);
-    player.avatar = sanitizeAvatar(profile?.avatar);
+    player.avatar = lockAvatar(sanitizeAvatar(profile?.avatar), player.stats);
+  }
+
+  /** Nowe statystyki po grze: odblokowują kolejne elementy postaci. */
+  setUserStats(userId: string, stats: UserStats): void {
+    for (const p of this.players) if (p.userId === userId) p.stats = stats;
   }
 
   private uniqueName(base: string, selfId: string): string {

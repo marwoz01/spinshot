@@ -21,7 +21,7 @@ function RoundEnd({ room }: { room: RoomState }) {
       <div className="panel anim-pop flex w-full max-w-xl flex-col items-center gap-3 p-6 text-center">
         <div className="chip !bg-sun">Runda {round.number} zakończona</div>
         {winner ? (
-          <AvatarSvg avatar={winner.avatar} mood="happy" size={120} className="anim-float" />
+          <AvatarSvg avatar={winner.avatar} mood="happy" size={150} className="anim-float" />
         ) : (
           <Ghost className="anim-float size-24 fill-lilac text-ink" aria-hidden="true" />
         )}
@@ -57,7 +57,7 @@ function GameOver({ room, you, game }: { room: RoomState; you: string; game: Gam
           {podium.map((p, i) =>
             p ? (
               <div key={p.id} className="flex w-28 flex-col items-center sm:w-36">
-                <AvatarSvg avatar={p.avatar} mood={p.score === top && top > 0 ? "happy" : "normal"} size={places[i] === 1 ? 110 : 84} className={places[i] === 1 ? "anim-float" : ""} />
+                <AvatarSvg avatar={p.avatar} mood={p.score === top && top > 0 ? "happy" : "normal"} size={places[i] === 1 ? 150 : 116} className={places[i] === 1 ? "anim-float" : ""} />
                 <div className="w-full truncate text-center font-display text-lg">{p.name}</div>
                 <div className="text-sm font-black text-ink-soft">{p.score} pkt</div>
                 <div

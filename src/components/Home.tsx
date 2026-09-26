@@ -42,7 +42,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
             </h2>
             <span className={`chip ${auth.signedIn ? "!bg-mint" : ""}`}>{auth.signedIn ? "Konto" : "Gość"}</span>
           </div>
-          <AvatarEditor avatar={profile.avatar} onChange={(avatar) => onProfile({ ...profile, avatar })} />
+          <AvatarEditor avatar={profile.avatar} stats={stats} onChange={(avatar) => onProfile({ ...profile, avatar })} />
           <label className="w-full max-w-72">
             <span className="mb-1 block text-xs font-black uppercase tracking-wider text-ink-soft">Twój nick</span>
             <input
@@ -69,7 +69,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
             </dl>
           )}
           {auth.enabled && !auth.signedIn && (
-            <p className="max-w-72 text-center text-sm font-bold text-ink-soft">Zaloguj się, żeby zapisać postać i zbierać statystyki.</p>
+            <p className="max-w-md text-center text-sm font-bold text-ink-soft">Zaloguj się, żeby zapisać postać, zbierać statystyki i nagrody.</p>
           )}
         </section>
 

@@ -46,7 +46,7 @@ export function App() {
         {!room || !you ? (
           <Home profile={profile} onProfile={updateProfile} stats={stats} connected={game.connected} onCreate={game.create} onJoin={game.join} />
         ) : room.phase === "lobby" ? (
-          <Lobby room={room} you={you} game={game} profile={profile} onProfile={updateProfile} />
+          <Lobby room={room} you={you} game={game} profile={profile} onProfile={updateProfile} stats={stats} />
         ) : (
           <Game room={room} you={you} game={game} />
         )}

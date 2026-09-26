@@ -1,6 +1,6 @@
 import { Check, Crown, Link, Pencil, Play, X } from "lucide-react";
 import { useState } from "react";
-import { MAX_NAME, MAX_PLAYERS, MIN_PLAYERS, ROUND_OPTIONS, SPEED_MIN_ROUNDS, TIMER_OPTIONS, type ClientProfile, type RoomState } from "../../shared/types.ts";
+import { MAX_NAME, MAX_PLAYERS, MIN_PLAYERS, ROUND_OPTIONS, SPEED_MIN_ROUNDS, TIMER_OPTIONS, type ClientProfile, type RoomState, type UserStats } from "../../shared/types.ts";
 import type { GameApi } from "../useGame.ts";
 import { AvatarEditor } from "./AvatarEditor.tsx";
 import { AvatarSvg } from "./AvatarSvg.tsx";
@@ -49,9 +49,10 @@ interface LobbyProps {
   game: GameApi;
   profile: ClientProfile;
   onProfile: (profile: ClientProfile) => void;
+  stats: UserStats | null;
 }
 
-export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
+export function Lobby({ room, you, game, profile, onProfile, stats }: LobbyProps) {
   const isHost = room.hostId === you;
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -106,7 +107,7 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
                     <X className="size-3.5" />
                   </button>
                 )}
-                <AvatarSvg avatar={p.avatar} size={78} />
+                <AvatarSvg avatar={p.avatar} size={104} />
                 <div className="w-full truncate font-display text-lg leading-tight">{p.name}</div>
                 <div className="mt-0.5 flex flex-wrap justify-center gap-1">
                   {p.id === you && <span className="chip !bg-sun !text-[0.6rem]">Ty</span>}
@@ -186,7 +187,7 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
         <div className="fixed inset-0 z-40 grid place-items-center bg-ink/60 p-4" role="dialog" aria-modal="true" aria-label="Edytuj postać" onClick={() => setEditing(false)}>
           <div className="panel anim-pop flex w-full max-w-sm flex-col items-center gap-4 p-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="panel-title">Twoja postać</h2>
-            <AvatarEditor avatar={profile.avatar} onChange={(avatar) => onProfile({ ...profile, avatar })} />
+            <AvatarEditor avatar={profile.avatar} stats={stats} onChange={(avatar) => onProfile({ ...profile, avatar })} />
             <input className="field max-w-72 text-center text-lg" value={profile.name} maxLength={MAX_NAME} aria-label="Nick" onChange={(e) => onProfile({ ...profile, name: e.target.value })} />
             <button type="button" className="btn btn-sun" onClick={() => setEditing(false)}>
               Gotowe
