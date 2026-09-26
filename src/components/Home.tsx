@@ -1,12 +1,13 @@
+import { CaseSensitive, FerrisWheel, Ghost, Play } from "lucide-react";
 import { useState } from "react";
 import { MAX_NAME, type ClientProfile, type UserStats } from "../../shared/types.ts";
 import { useAuthInfo } from "../auth.tsx";
 import { AvatarEditor } from "./AvatarEditor.tsx";
 
 const STEPS = [
-  { icon: "🎡", title: "Zakręć kołem", text: "Pole na kole decyduje, co możesz zrobić w tej turze." },
-  { icon: "🔤", title: "Litera albo hasło", text: "Wpisz jedną spółgłoskę albo zgaduj całe hasło. Samogłoski tylko z koła!" },
-  { icon: "👻", title: "Zgadnij lub odpadnij", text: "Złe hasło kosztuje kolejkę, ale na polu „Zgadnij lub odpadnij” pomyłka zmienia Cię w ducha." },
+  { icon: <FerrisWheel />, title: "Zakręć kołem", text: "Pole na kole decyduje, co możesz zrobić w tej turze." },
+  { icon: <CaseSensitive />, title: "Litera albo hasło", text: "Wybierz spółgłoskę albo zgaduj całe hasło. Trafiona litera to kolejny obrót. Samogłoski tylko z koła!" },
+  { icon: <Ghost />, title: "Zgadnij lub odpadnij", text: "Złe hasło kosztuje kolejkę, ale na polu „Zgadnij lub odpadnij” pomyłka zmienia Cię w ducha." },
 ];
 
 interface HomeProps {
@@ -79,7 +80,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
           <ol className="grid gap-2.5 sm:grid-cols-2">
             {STEPS.map((step, i) => (
               <li key={step.title} className="flex gap-3 rounded-2xl border-[3px] border-ink bg-lilac p-3">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-ink bg-white text-2xl" aria-hidden="true">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-ink bg-white [&>svg]:size-6" aria-hidden="true">
                   {step.icon}
                 </span>
                 <div>
@@ -113,7 +114,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
               </button>
             </form>
             <button type="button" className="btn btn-sun w-full !py-4 !text-2xl" disabled={!connected || nameMissing} onClick={onCreate}>
-              ▶ Stwórz pokój
+              <Play className="size-6 fill-current" /> Stwórz pokój
             </button>
             {nameMissing && <p className="text-center text-sm font-black text-coral">Najpierw wpisz nick.</p>}
             {!connected && <p className="text-center text-sm font-black text-ink-soft">Łączenie z serwerem…</p>}

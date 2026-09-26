@@ -1,3 +1,4 @@
+import { Ghost, Target, Timer } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { PublicPlayer, RoomState } from "../../shared/types.ts";
 import { WHEEL } from "../../shared/wheel.ts";
@@ -90,18 +91,11 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
   } else if (me?.status === "eliminated") {
     body = (
       <Headline sub="Ktoś może Cię wskrzesić polem na kole. Jeśli odpadną wszyscy, pula przepada.">
-        <span className="inline-block anim-float">👻</span> Jesteś duchem w tej rundzie
+        <Ghost className="anim-float inline-block size-7 align-[-0.2em]" /> Jesteś duchem w tej rundzie
       </Headline>
     );
   } else if (myTurn && turn.phase === "spin") {
-    body = (
-      <>
-        <Headline sub="Kliknij środek koła albo przycisk poniżej.">Twoja kolej!</Headline>
-        <button type="button" className="btn btn-sun anim-pulse mx-auto !px-10 !py-3 !text-2xl" onClick={game.spin}>
-          🎡 Zakręć kołem
-        </button>
-      </>
-    );
+    body = <Headline sub="Kliknij „Kręć!” na środku koła.">Twoja kolej!</Headline>;
   } else if (turn.phase === "spinning") {
     body = <Headline sub={myTurn ? "Trzymaj kciuki!" : `Kręci: ${current?.name}`}>Koło się kręci…</Headline>;
   } else if (myTurn && turn.phase === "action") {
@@ -149,14 +143,14 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
       <div className="flex min-h-7 flex-wrap items-center justify-between gap-2">
         {segment && turn?.phase !== "spinning" ? (
           <span className="chip anim-pop !text-[0.7rem] !normal-case" style={{ background: segment.color, color: segment.textColor }}>
-            🎯 {segment.label}
+            <Target className="size-3.5" /> {segment.label}
           </span>
         ) : (
           <span />
         )}
         {seconds !== null && turn?.phase !== "spinning" && (
           <span className={`chip !text-sm ${seconds <= 5 ? "!bg-coral text-white anim-wobble" : "!bg-white"}`} aria-label={`Pozostało ${seconds} sekund`}>
-            ⏱ {seconds} s
+            <Timer className="size-4" /> {seconds} s
           </span>
         )}
       </div>

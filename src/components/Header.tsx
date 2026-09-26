@@ -1,3 +1,4 @@
+import { LogOut, Volume2, VolumeX } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useAuthInfo } from "../auth.tsx";
 import { isMuted, setMuted } from "../sfx.ts";
@@ -27,11 +28,11 @@ export function Header({ compact, onLeave }: { compact: boolean; onLeave?: () =>
             setMutedState(!muted);
           }}
         >
-          {muted ? "🔇" : "🔊"}
+          {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
         </button>
         {onLeave && (
           <button type="button" className="btn btn-sm btn-coral" onClick={onLeave}>
-            Wyjdź
+            <LogOut className="size-4" /> Wyjdź
           </button>
         )}
         {auth.enabled && (

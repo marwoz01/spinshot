@@ -31,10 +31,13 @@
     font-family: var(--font-sans);
     font-weight: 700;
     color: var(--color-ink);
-    background-color: #5b25c9;
+    /* Promienie jak w studiu teleturnieju: rozchodzą się spod górnej krawędzi i gasną ku dołowi. */
+    background-color: #4a1bb0;
     background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M28 40c0-12 22-12 22 0 0 9-11 9-11 20M39 74v1'/%3E%3Cpath d='M170 30l6 13 14 2-10 10 3 14-13-7-13 7 3-14-10-10 14-2z'/%3E%3Ccircle cx='190' cy='160' r='22'/%3E%3Cpath d='M190 138v44M168 160h44M175 145l30 30M205 145l-30 30'/%3E%3Cpath d='M40 170c10-14 26-14 36 0s26 14 36 0'/%3E%3Cpath d='M95 95l8 26 8-26M99 112h8'/%3E%3Cpath d='M120 200a10 10 0 1 1 20 0 16 16 0 1 1-32 0'/%3E%3Cpath d='M210 90h14M217 83v14'/%3E%3C/g%3E%3C/svg%3E"),
-      radial-gradient(1200px 700px at 50% -10%, #8a4dff 0%, #5b25c9 55%, #3d168f 100%);
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgb(205 170 255 / 0.4), transparent 70%),
+      linear-gradient(to bottom, transparent 30%, rgb(34 10 90 / 0.6) 100%),
+      repeating-conic-gradient(from 0deg at 50% -6%, rgb(255 255 255 / 0.075) 0deg 5deg, transparent 5.6deg 14.4deg, rgb(255 255 255 / 0.075) 15deg),
+      radial-gradient(130% 90% at 50% 0%, #7b3ef2 0%, #5b25c9 45%, #3a148c 100%);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
   }
@@ -52,6 +55,12 @@
   input {
     font: inherit;
     color: inherit;
+  }
+
+  /* Ikony Lucide: grubsza linia pasuje do grubych konturów reszty interfejsu. */
+  .lucide {
+    stroke-width: 2.6;
+    flex-shrink: 0;
   }
 
   :focus-visible {
@@ -192,15 +201,6 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     background: var(--color-lilac);
-  }
-
-  .neon {
-    font-family: var(--font-display);
-    color: #e9feff;
-    text-shadow:
-      0 0 4px var(--color-neon),
-      0 0 12px var(--color-neon),
-      0 0 24px #29d3ff;
   }
 
   .tile {

@@ -1,3 +1,4 @@
+import { Dices } from "lucide-react";
 import { useState } from "react";
 import { AVATAR_COLORS, AVATAR_OPTIONS, avatarLimit, randomAvatar, type Avatar } from "../../shared/avatar.ts";
 import { AvatarSvg } from "./AvatarSvg.tsx";
@@ -39,7 +40,7 @@ export function AvatarEditor({ avatar, onChange }: { avatar: Avatar; onChange: (
           aria-label="Losuj postać"
           onClick={() => update(randomAvatar())}
         >
-          🎲
+          <Dices className="size-5" />
         </button>
       </div>
 

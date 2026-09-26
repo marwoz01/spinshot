@@ -447,6 +447,8 @@ export class Room {
     }
 
     if (this.allLettersRevealed()) return this.winRound(player.id);
+    // Trafienie: ten sam gracz kręci jeszcze raz. Pudło oddaje kolejkę.
+    if (hits > 0) return this.startTurn(player.id);
     this.endTurn();
   }
 

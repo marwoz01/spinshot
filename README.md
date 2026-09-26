@@ -9,7 +9,7 @@ Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekaln
 1. Host tworzy pokój i wysyła znajomym kod albo link. Do gry potrzeba co najmniej 2 osób, a zmieści się 12.
 2. Każda runda to jedno hasło z tematem. Pula punktów zaczyna się od 1.
 3. W swojej turze kręcisz kołem. Wylosowane pole decyduje, co możesz zrobić.
-4. Jeśli możesz grać, wpisujesz **jedną spółgłoskę** albo **zgadujesz całe hasło**. Samogłoskę wolno wybrać tylko z pola „możesz wybrać samogłoskę”. Po jednej literze kolejka przechodzi dalej, niezależnie od tego, czy trafiłeś.
+4. Jeśli możesz grać, wpisujesz **jedną spółgłoskę** albo **zgadujesz całe hasło**. Samogłoskę wolno wybrać tylko z pola „możesz wybrać samogłoskę”. Jeśli litera jest w haśle, kręcisz jeszcze raz. Pudło oddaje kolejkę następnej osobie.
 5. Złe hasło kosztuje Cię **kolejkę**. Z rundy odpadasz i zostajesz duchem 👻 tylko przy polu „Zgadnij lub odpadnij”. Jeśli odpadną wszyscy, runda kończy się bez zwycięzcy, a pula przepada.
 6. Kto odgadnie hasło, zgarnia całą pulę. Odkrycie ostatniej litery też liczy się jako odgadnięcie.
 7. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów.

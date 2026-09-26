@@ -1,3 +1,4 @@
+import { Check, Crown, Link, Pencil, Play, X } from "lucide-react";
 import { useState } from "react";
 import { MAX_NAME, MAX_PLAYERS, MIN_PLAYERS, ROUND_OPTIONS, TIMER_OPTIONS, type ClientProfile, type RoomState } from "../../shared/types.ts";
 import type { GameApi } from "../useGame.ts";
@@ -75,7 +76,7 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
             Gracze <span className="text-ink-soft">{room.players.length}/{MAX_PLAYERS}</span>
           </h2>
           <button type="button" className="btn btn-sm" onClick={() => setEditing(true)}>
-            ✏️ Moja postać
+            <Pencil className="size-4" /> Moja postać
           </button>
         </div>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -87,8 +88,8 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
               } ${p.connected ? "" : "opacity-50"}`}
             >
               {p.id === room.hostId && (
-                <span className="absolute -left-2 -top-3 -rotate-12 text-2xl drop-shadow" title="Host" aria-label="Host">
-                  👑
+                <span className="absolute -left-2 -top-3 -rotate-12" title="Host" aria-label="Host">
+                  <Crown className="size-8 fill-sun text-ink" />
                 </span>
               )}
               {isHost && p.id !== you && (
@@ -99,7 +100,7 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
                   title="Wyrzuć"
                   onClick={() => game.kick(p.id)}
                 >
-                  ✕
+                  <X className="size-3.5" />
                 </button>
               )}
               <AvatarSvg avatar={p.avatar} size={78} />
@@ -127,7 +128,15 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
           <div className="flex items-center gap-3">
             <div className="flex-1 rounded-2xl border-[3px] border-ink bg-lilac py-2 text-center font-display text-4xl tracking-[0.3em]">{room.code}</div>
             <button type="button" className="btn btn-mint" onClick={copy}>
-              {copied ? "✓ Skopiowano" : "🔗 Link"}
+              {copied ? (
+                <>
+                  <Check className="size-5" /> Skopiowano
+                </>
+              ) : (
+                <>
+                  <Link className="size-5" /> Link
+                </>
+              )}
             </button>
           </div>
         </section>
@@ -148,7 +157,7 @@ export function Lobby({ room, you, game, profile, onProfile }: LobbyProps) {
           {isHost ? (
             <>
               <button type="button" className="btn btn-sun w-full !py-4 !text-2xl" disabled={present < MIN_PLAYERS} onClick={game.start}>
-                ▶ Start
+                <Play className="size-6 fill-current" /> Start
               </button>
               {present < MIN_PLAYERS && <p className="-mt-2 text-center text-sm font-black text-ink-soft">Potrzeba co najmniej {MIN_PLAYERS} graczy.</p>}
             </>

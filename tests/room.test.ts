@@ -60,7 +60,7 @@ describe("poczekalnia", () => {
 });
 
 describe("tura", () => {
-  it("Graj dalej: tylko spółgłoska, trafienie odkrywa literę, kolejka przechodzi", () => {
+  it("Graj dalej: tylko spółgłoska, trafienie odkrywa literę i daje kolejny obrót", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "ALA MA KOTA");
     spinTo(room, ids[0], "play");
@@ -70,8 +70,16 @@ describe("tura", () => {
     const state = room.toState();
     expect(state.round!.board[1]).toEqual(["M", null]);
     expect(state.round!.answer).toBeNull();
+    expect(turn(room)).toMatchObject({ playerId: ids[0], phase: "spin" });
+    expect(() => room.spin(ids[1])).toThrow(/Twój ruch/);
+  });
+
+  it("pudło w literze oddaje kolejkę", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "ALA MA KOTA");
+    spinTo(room, ids[0], "play");
+    room.letter(ids[0], "Z");
     expect(turn(room)).toMatchObject({ playerId: ids[1], phase: "spin" });
-    expect(() => room.spin(ids[0])).toThrow(/Twój ruch/);
   });
 
   it("pole samogłoski pozwala wpisać samogłoskę", () => {
@@ -87,8 +95,8 @@ describe("tura", () => {
     startWith(room, ids[0], "ALA MA KOTA");
     spinTo(room, ids[0], "play");
     room.letter(ids[0], "K");
-    spinTo(room, ids[1], "play");
-    expect(() => room.letter(ids[1], "k")).toThrow(/już padła/);
+    spinTo(room, ids[0], "play");
+    expect(() => room.letter(ids[0], "k")).toThrow(/już padła/);
   });
 
   it("+2 powiększa pulę, a poprawne hasło ją zgarnia", () => {
@@ -125,7 +133,7 @@ describe("tura", () => {
     const { room, ids } = setup(["Ala", "Bartek"]);
     startWith(room, ids[0], "ALA MA KOTA");
     spinTo(room, ids[0], "plus2");
-    room.letter(ids[0], "K");
+    room.letter(ids[0], "Z");
     spinTo(room, ids[1], "guessOrOut");
     room.guess(ids[1], "nie");
     spinTo(room, ids[0], "guessOrOut");

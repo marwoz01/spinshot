@@ -36,10 +36,12 @@ export function App() {
   }, [phase, refreshStats]);
 
   const inRoom = Boolean(room && you);
+  // W trakcie rundy przycisk wyjścia jest w panelu gry, więc nagłówek go nie powtarza.
+  const midGame = room?.phase === "playing" || room?.phase === "roundEnd";
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Header compact={inRoom} onLeave={inRoom ? game.leave : undefined} />
+      <Header compact={inRoom} onLeave={inRoom && !midGame ? game.leave : undefined} />
       <main className="flex-1 px-4 pb-10">
         {!room || !you ? (
           <Home profile={profile} onProfile={updateProfile} stats={stats} connected={game.connected} onCreate={game.create} onJoin={game.join} />

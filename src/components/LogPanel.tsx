@@ -1,3 +1,4 @@
+import { SendHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { LogEntry, PublicPlayer } from "../../shared/types.ts";
 import { AvatarSvg } from "./AvatarSvg.tsx";
@@ -64,7 +65,7 @@ export function LogPanel({ log, players, onSend, title = "Czat i wydarzenia", cl
       >
         <input className="field !rounded-full !py-1.5 text-sm" value={text} maxLength={200} placeholder="Napisz coś…" onChange={(e) => setText(e.target.value)} aria-label="Wiadomość" />
         <button type="submit" className="btn btn-sm btn-grape" aria-label="Wyślij">
-          ➤
+          <SendHorizontal className="size-4" />
         </button>
       </form>
     </section>

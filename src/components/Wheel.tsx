@@ -1,3 +1,4 @@
+import { LoaderCircle } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { SEGMENT_ANGLE, SPIN_MS, WHEEL } from "../../shared/wheel.ts";
 
@@ -215,7 +216,7 @@ export function Wheel({ rotation, canSpin, spinning, onSpin }: WheelProps) {
           canSpin ? "anim-pulse bg-sun hover:scale-105 active:scale-95" : "bg-white"
         }`}
       >
-        {canSpin ? "Kręć!" : spinning ? <span className="anim-wobble inline-block text-3xl">🌀</span> : <span className="text-3xl">?</span>}
+        {canSpin ? "Kręć!" : spinning ? <LoaderCircle className="size-9 animate-spin" /> : <span className="text-3xl">?</span>}
       </button>
     </div>
   );
