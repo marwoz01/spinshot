@@ -19,11 +19,17 @@ function RoundEnd({ room }: { room: RoomState }) {
     <div className="fixed inset-0 z-30 grid place-items-center bg-ink/55 p-4" role="dialog" aria-modal="true" aria-label="Koniec rundy">
       <div className="panel anim-pop flex w-full max-w-xl flex-col items-center gap-3 p-6 text-center">
         <div className="chip !bg-sun">Runda {round.number} zakończona</div>
-        {winner && <AvatarSvg avatar={winner.avatar} mood="happy" size={120} className="anim-float" />}
-        <div className="font-display text-3xl uppercase leading-tight">{winner ? `${winner.name} zgaduje!` : "Koniec rundy"}</div>
+        {winner ? (
+          <AvatarSvg avatar={winner.avatar} mood="happy" size={120} className="anim-float" />
+        ) : (
+          <div className="anim-float text-7xl" aria-hidden="true">
+            👻
+          </div>
+        )}
+        <div className="font-display text-3xl uppercase leading-tight">{winner ? `${winner.name} zgaduje!` : "Wszyscy odpadli!"}</div>
         <div className="text-sm font-black uppercase tracking-wider text-ink-soft">Hasło ({round.category})</div>
         <div className="font-display text-3xl tracking-wide text-grape">{round.answer}</div>
-        <div className="neon rounded-2xl bg-ink px-5 py-2 text-2xl">+{round.pool} pkt</div>
+        <div className="neon rounded-2xl bg-ink px-5 py-2 text-2xl">{winner ? `+${round.pool} pkt` : `Pula ${round.pool} pkt przepada`}</div>
         <div className="text-sm font-black text-ink-soft">{last ? "Za chwilę wyniki" : "Następna runda za"} {seconds ?? ""} s</div>
       </div>
     </div>

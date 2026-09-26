@@ -1,6 +1,6 @@
 # Kręć i Zgaduj
 
-Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekalni, kręcicie kołem, odkrywacie litery i zgadujecie podchwytliwe hasła. W temacie „Dania i napoje” wcale nie musi chodzić o jedzenie.
+Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekalni, kręcicie kołem, odkrywacie litery i zgadujecie hasła: przysłowia, powiedzenia, tytuły filmów, piosenek i wiele innych.
 
 ![Rozgrywka](docs/rozgrywka.png)
 
@@ -10,23 +10,23 @@ Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekaln
 2. Każda runda to jedno hasło z tematem. Pula punktów zaczyna się od 1.
 3. W swojej turze kręcisz kołem. Wylosowane pole decyduje, co możesz zrobić.
 4. Jeśli możesz grać, wpisujesz **jedną spółgłoskę** albo **zgadujesz całe hasło**. Samogłoskę wolno wybrać tylko z pola „możesz wybrać samogłoskę”. Po jednej literze kolejka przechodzi dalej, niezależnie od tego, czy trafiłeś.
-5. Złe hasło oznacza, że **odpadasz z rundy** i zostajesz duchem 👻. Jeśli odpadną wszyscy, wszyscy wracają do gry.
+5. Złe hasło kosztuje Cię **kolejkę**. Z rundy odpadasz i zostajesz duchem 👻 tylko przy polu „Zgadnij lub odpadnij”. Jeśli odpadną wszyscy, runda kończy się bez zwycięzcy, a pula przepada.
 6. Kto odgadnie hasło, zgarnia całą pulę. Odkrycie ostatniej litery też liczy się jako odgadnięcie.
 7. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów.
 
 ### Pola na kole
 
-| Pole | Efekt |
-| --- | --- |
-| Graj dalej (7×) | Wpisujesz spółgłoskę albo zgadujesz hasło |
-| +1 / +2 pkt do puli | Pula rośnie, a Ty grasz dalej |
-| Graj dalej, możesz wybrać samogłoskę | W tej turze wolno Ci wpisać samogłoskę |
-| Graj dalej, ale odwracamy kolejkę | Grasz, a potem kolejka idzie w drugą stronę |
-| Tracisz kolejkę | Ruch przechodzi na następną osobę |
-| Ty i kolejna osoba tracicie kolejkę | Następna osoba też zostaje pominięta |
-| Zgadnij lub odpadnij | Musisz od razu zgadywać. Błąd albo koniec czasu oznacza, że odpadasz |
-| Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij” | Grasz albo wskazujesz kogoś, kto musi od razu zgadywać |
-| Wskrześ gracza | Przywracasz ducha do gry i grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
+| Pole | Napis na kole | Efekt |
+| --- | --- | --- |
+| Graj dalej (6×) | GRAJ DALEJ | Wpisujesz spółgłoskę albo zgadujesz hasło |
+| +1 / +2 pkt do puli | +1 PKT / +2 PKT DO PULI | Pula rośnie, a Ty grasz dalej |
+| Graj dalej, możesz wybrać samogłoskę | SAMOGŁOSKA | W tej turze wolno Ci wpisać samogłoskę |
+| Graj dalej, ale odwracamy kolejkę | ZMIANA KIERUNKU | Grasz, a potem kolejka idzie w drugą stronę |
+| Tracisz kolejkę | TRACISZ KOLEJKĘ | Ruch przechodzi na następną osobę |
+| Ty i kolejna osoba tracicie kolejkę | TRACISZ TY I NASTĘPNY | Następna osoba też zostaje pominięta |
+| Zgadnij lub odpadnij | ZGADNIJ LUB ODPADNIJ | Musisz od razu zgadywać. Błąd albo koniec czasu oznacza, że odpadasz |
+| Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij” | WSKAŻ OFIARĘ | Grasz albo wskazujesz kogoś, kto musi od razu zgadywać |
+| Wskrześ gracza | WSKRZEŚ GRACZA | Przywracasz ducha do gry i grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
 
 Host ustawia limit czasu na ruch: 15, 30, 45 albo 60 s, albo bez limitu. Gdy czas minie, gracz traci kolejkę. Przy „Zgadnij lub odpadnij” odpada. Osoba rozłączona jest pomijana po kilku sekundach, a po odświeżeniu strony wraca do pokoju automatycznie.
 

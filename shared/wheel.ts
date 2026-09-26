@@ -12,10 +12,8 @@ export type SegmentKind =
 
 export interface Segment {
   kind: SegmentKind;
-  /** Linie tekstu na kole (czytane od środka na zewnątrz). */
+  /** Krótki napis na kole (czytany od środka na zewnątrz), najwyżej 2 linie. Pełny opis jest w `label`. */
   lines: string[];
-  /** Mniejszy dopisek pod główną linią. */
-  small?: string[];
   /** Pełny opis do dziennika i komunikatów. */
   label: string;
   color: string;
@@ -24,21 +22,21 @@ export interface Segment {
 
 // Kolejność i kolory jak na kole referencyjnym (zgodnie z ruchem wskazówek zegara od góry) + pole wskrzeszenia.
 export const WHEEL: Segment[] = [
-  { kind: "plus1", lines: ["+1 PKT"], small: ["DO PULI PUNKTÓW", "W TEJ RUNDZIE"], label: "+1 pkt do puli", color: "#e8545e", textColor: "#fff" },
+  { kind: "plus1", lines: ["+1 PKT", "DO PULI"], label: "+1 pkt do puli", color: "#e8545e", textColor: "#fff" },
   { kind: "lose", lines: ["TRACISZ", "KOLEJKĘ"], label: "Tracisz kolejkę", color: "#35bfae", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#2f3b57", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#f59a45", textColor: "#fff" },
-  { kind: "vowel", lines: ["GRAJ DALEJ, ALE"], small: ["MOŻESZ WYBRAĆ", "SAMOGŁOSKĘ"], label: "Graj dalej, możesz wybrać samogłoskę", color: "#5b5fc7", textColor: "#fff" },
+  { kind: "vowel", lines: ["SAMOGŁOSKA"], label: "Graj dalej, możesz wybrać samogłoskę", color: "#5b5fc7", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#3ea8d8", textColor: "#fff" },
-  { kind: "loseTwo", lines: ["TY I KOLEJNA OSOBA"], small: ["TRACICIE KOLEJKĘ"], label: "Ty i kolejna osoba tracicie kolejkę", color: "#f27856", textColor: "#fff" },
-  { kind: "plus2", lines: ["+2 PKT"], small: ["DO PULI PUNKTÓW", "W TEJ RUNDZIE"], label: "+2 pkt do puli", color: "#f6d145", textColor: "#3b2a00" },
-  { kind: "guessOrOut", lines: ["ZGADNIJ", "LUB ODPADNIJ"], label: "Zgadnij lub odpadnij", color: "#2f7fd6", textColor: "#fff" },
+  { kind: "loseTwo", lines: ["TRACISZ TY", "I NASTĘPNY"], label: "Ty i kolejna osoba tracicie kolejkę", color: "#f27856", textColor: "#fff" },
+  { kind: "plus2", lines: ["+2 PKT", "DO PULI"], label: "+2 pkt do puli", color: "#f6d145", textColor: "#3b2a00" },
+  { kind: "guessOrOut", lines: ["ZGADNIJ LUB", "ODPADNIJ"], label: "Zgadnij lub odpadnij", color: "#2f7fd6", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#6b6f7e", textColor: "#fff" },
-  { kind: "pickGuessOrOut", lines: ["GRAJ DALEJ, ALBO"], small: ["WYBIERZ OSOBĘ DO", "„ZGADNIJ LUB ODPADNIJ”"], label: "Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij”", color: "#e3685a", textColor: "#fff" },
+  { kind: "pickGuessOrOut", lines: ["WSKAŻ", "OFIARĘ"], label: "Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij”", color: "#e3685a", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#df4669", textColor: "#fff" },
-  { kind: "reverse", lines: ["GRAJ DALEJ, ALE"], small: ["ODWRACAMY", "KOLEJKĘ"], label: "Graj dalej, ale odwracamy kolejkę", color: "#68bf66", textColor: "#fff" },
+  { kind: "reverse", lines: ["ZMIANA", "KIERUNKU"], label: "Graj dalej, ale odwracamy kolejkę", color: "#68bf66", textColor: "#fff" },
   { kind: "play", lines: ["GRAJ DALEJ"], label: "Graj dalej", color: "#e46aa6", textColor: "#fff" },
-  { kind: "revive", lines: ["WSKRZEŚ"], small: ["ODPADNIĘTEGO GRACZA", "I GRAJ DALEJ"], label: "Wskrześ gracza i graj dalej", color: "#9b5de5", textColor: "#fff" },
+  { kind: "revive", lines: ["WSKRZEŚ", "GRACZA"], label: "Wskrześ gracza i graj dalej", color: "#9b5de5", textColor: "#fff" },
 ];
 
 export const SEGMENT_ANGLE = 360 / WHEEL.length;

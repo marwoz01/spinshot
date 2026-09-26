@@ -1,6 +1,10 @@
+import type { CSSProperties } from "react";
+
 export function Board({ board, category }: { board: (string | null)[][]; category: string }) {
+  // Najdłuższe słowo musi zmieścić się w jednym rzędzie, więc to ono wyznacza rozmiar kafelków (.tile w CSS).
+  const letters = Math.max(1, ...board.map((word) => word.length));
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="@container flex flex-col items-center gap-3" style={{ "--letters": letters } as CSSProperties}>
       <div className="chip !bg-sun !px-4 !py-1 !text-sm shadow-[0_3px_0_var(--color-ink)]">
         Temat: <span className="normal-case tracking-normal">{category}</span>
       </div>

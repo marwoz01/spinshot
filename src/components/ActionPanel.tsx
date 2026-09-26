@@ -81,7 +81,7 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
   } else if (turn.phase === "forcedGuess" && turn.targetId === you) {
     body = (
       <>
-        <Headline sub={turn.playerId === you ? "Pole „Zgadnij lub odpadnij” — nie ma odwrotu!" : `${current?.name} wskazuje właśnie Ciebie!`}>
+        <Headline sub={turn.playerId === you ? "Pole „Zgadnij lub odpadnij”. Nie ma odwrotu!" : `${current?.name} wskazuje właśnie Ciebie!`}>
           Zgadnij albo odpadasz!
         </Headline>
         <GuessForm big onGuess={game.guess} warning="Pomyłka albo koniec czasu = odpadasz z rundy." />
@@ -89,7 +89,7 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
     );
   } else if (me?.status === "eliminated") {
     body = (
-      <Headline sub="Ktoś może Cię wskrzesić polem na kole. Jeśli odpadną wszyscy — wszyscy wracają!">
+      <Headline sub="Ktoś może Cię wskrzesić polem na kole. Jeśli odpadną wszyscy, pula przepada.">
         <span className="inline-block anim-float">👻</span> Jesteś duchem w tej rundzie
       </Headline>
     );
@@ -110,7 +110,7 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
         <Headline sub={turn.allowVowel ? "Możesz wybrać spółgłoskę albo samogłoskę." : "Wybierz spółgłoskę albo zgaduj całe hasło."}>
           Twój ruch!
         </Headline>
-        <GuessForm onGuess={game.guess} warning="Uwaga: złe hasło = odpadasz z rundy." />
+        <GuessForm onGuess={game.guess} warning="Złe hasło = tracisz kolejkę." />
       </>
     );
   } else if (myTurn && turn.phase === "choice") {

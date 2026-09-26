@@ -221,5 +221,5 @@ io.on("connection", (socket: GameSocket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Kręć i Zgaduj działa na http://localhost:${PORT} (Clerk: ${clerkEnabled ? "włączony" : "wyłączony — tylko goście"})`);
+  console.log(`Kręć i Zgaduj działa na http://localhost:${PORT} (Clerk: ${clerkEnabled ? "włączony" : "wyłączony, tylko goście"})`);
 });

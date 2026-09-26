@@ -47,13 +47,13 @@ function playFx(fx: Fx, you: string | null) {
     case "hit":
       return sfx.hit();
     case "miss":
+    case "wrongGuess":
       return sfx.miss();
     case "pool":
       return sfx.pool();
     case "eliminated":
       return sfx.eliminated();
     case "revived":
-    case "allBack":
       return sfx.revive();
     case "reverse":
       return sfx.click();

@@ -102,7 +102,7 @@ export type Fx =
   | { type: "pool"; amount: number }
   | { type: "eliminated"; playerId: string }
   | { type: "revived"; playerId: string }
-  | { type: "allBack" }
+  | { type: "wrongGuess"; playerId: string }
   | { type: "reverse" }
   | { type: "roundWin"; playerId: string }
   | { type: "gameOver" };

@@ -6,8 +6,7 @@ import { AvatarEditor } from "./AvatarEditor.tsx";
 const STEPS = [
   { icon: "🎡", title: "Zakręć kołem", text: "Pole na kole decyduje, co możesz zrobić w tej turze." },
   { icon: "🔤", title: "Litera albo hasło", text: "Wpisz jedną spółgłoskę albo zgaduj całe hasło. Samogłoski tylko z koła!" },
-  { icon: "🪝", title: "Uważaj na haczyk", text: "Temat bywa podchwytliwy — „Dania i napoje” wcale nie musi być o jedzeniu." },
-  { icon: "👻", title: "Pomyłka = duch", text: "Złe hasło wyrzuca Cię z rundy, ale ktoś może Cię wskrzesić." },
+  { icon: "👻", title: "Zgadnij lub odpadnij", text: "Złe hasło kosztuje kolejkę, ale na polu „Zgadnij lub odpadnij” pomyłka zmienia Cię w ducha." },
 ];
 
 interface HomeProps {

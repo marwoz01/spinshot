@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Lilita One", "Nunito", system-ui, sans-serif;
+  --font-display: "Paytone One", "Nunito", system-ui, sans-serif;
   --font-sans: "Nunito", system-ui, sans-serif;
 
   --color-ink: #2a1650;
@@ -14,6 +14,7 @@
   --color-sun-dark: #e0a800;
   --color-mint: #35d0a0;
   --color-coral: #ff5d73;
+  --color-red: #e5364b;
   --color-sky: #41b6ff;
   --color-neon: #7ff6ff;
 }
@@ -203,14 +204,16 @@
   }
 
   .tile {
+    /* Na wąskim ekranie kafelki maleją, żeby najdłuższe słowo (--letters) zmieściło się w rzędzie. */
+    --tile-w: min(clamp(1.7rem, 4.2vw, 2.75rem), calc((100cqi - (var(--letters, 1) - 1) * 0.25rem) / var(--letters, 1)));
     display: grid;
     place-items: center;
-    width: clamp(1.7rem, 4.2vw, 2.75rem);
-    height: clamp(2.2rem, 5.4vw, 3.4rem);
+    width: var(--tile-w);
+    height: calc(var(--tile-w) * 1.27);
     font-family: var(--font-display);
-    font-size: clamp(1.1rem, 3vw, 1.9rem);
+    font-size: calc(var(--tile-w) * 0.68);
     border: 3px solid var(--color-ink);
-    border-radius: 10px;
+    border-radius: min(10px, calc(var(--tile-w) * 0.24));
     background: #fff;
     box-shadow: 0 4px 0 var(--color-ink);
   }
@@ -263,8 +266,10 @@
   }
 
   .key-miss {
-    background: #c9c2d9;
+    background: var(--color-red);
+    color: #fff;
     text-decoration: line-through;
+    text-decoration-thickness: 2px;
   }
 
   .scroll-thin {

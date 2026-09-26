@@ -102,25 +102,42 @@ describe("tura", () => {
     expect(room.toState().round!.answer).toBe("ŻÓŁW");
   });
 
-  it("złe hasło eliminuje z rundy", () => {
-    const { room, ids } = setup();
+  it("złe hasło kosztuje tylko kolejkę", () => {
+    const { room, ids, fx } = setup();
     startWith(room, ids[0], "ALA MA KOTA");
     spinTo(room, ids[0], "play");
     room.guess(ids[0], "Ola ma psa");
+    expect(room.getPlayer(ids[0])!.status).toBe("active");
+    expect(fx.some((f) => f.type === "wrongGuess")).toBe(true);
+    expect(turn(room).playerId).toBe(ids[1]);
+  });
+
+  it("złe hasło przy „Zgadnij lub odpadnij” eliminuje z rundy", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    spinTo(room, ids[0], "guessOrOut");
+    room.guess(ids[0], "PIES");
     expect(room.getPlayer(ids[0])!.status).toBe("eliminated");
     expect(turn(room).playerId).toBe(ids[1]);
   });
 
-  it("gdy wszyscy odpadną, wszyscy wracają do gry", () => {
-    const { room, ids, fx } = setup(["Ala", "Bartek"]);
+  it("gdy wszyscy odpadną, runda kończy się bez zwycięzcy", () => {
+    const { room, ids } = setup(["Ala", "Bartek"]);
     startWith(room, ids[0], "ALA MA KOTA");
-    spinTo(room, ids[0], "play");
-    room.guess(ids[0], "nie");
-    spinTo(room, ids[1], "play");
-    room.guess(ids[1], "też nie");
+    spinTo(room, ids[0], "plus2");
+    room.letter(ids[0], "K");
+    spinTo(room, ids[1], "guessOrOut");
+    room.guess(ids[1], "nie");
+    spinTo(room, ids[0], "guessOrOut");
+    room.guess(ids[0], "też nie");
+    expect(room.players.every((p) => p.status === "eliminated")).toBe(true);
+    expect(room.phase).toBe("roundEnd");
+    expect(room.round!.winnerId).toBeNull();
+    expect(room.players.every((p) => p.score === 0)).toBe(true);
+    expect(room.toState().round!.answer).toBe("ALA MA KOTA");
+    vi.advanceTimersByTime(ROUND_END_MS);
+    expect(room.round!.number).toBe(2);
     expect(room.players.every((p) => p.status === "active")).toBe(true);
-    expect(fx.some((f) => f.type === "allBack")).toBe(true);
-    expect(room.phase).toBe("playing");
   });
 
   it("odkrycie ostatniej litery wygrywa rundę", () => {
@@ -182,7 +199,7 @@ describe("pola koła", () => {
   it("wskrzeszenie przywraca odpadniętego gracza i pozwala grać dalej", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "KOT");
-    spinTo(room, ids[0], "play");
+    spinTo(room, ids[0], "guessOrOut");
     room.guess(ids[0], "PIES");
     spinTo(room, ids[1], "revive");
     expect(turn(room).phase).toBe("revive");

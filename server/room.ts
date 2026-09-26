@@ -334,7 +334,7 @@ export class Room {
       turn: null,
       winnerId: null,
     };
-    this.addLog("system", `Runda ${number}/${this.settings.rounds} — temat: ${password.category}`);
+    this.addLog("system", `Runda ${number}/${this.settings.rounds}. Temat: ${password.category}`);
     const eligible = this.eligiblePlayers();
     const starter = eligible[(number - 1) % Math.max(1, eligible.length)];
     if (starter) this.startTurn(starter.id);
@@ -411,7 +411,7 @@ export class Room {
           this.armDeadline();
           return this.touch();
         }
-        this.addLog("info", `Nikt nie odpadł — ${player.name} gra dalej.`);
+        this.addLog("info", `Nikt nie odpadł, więc ${player.name} gra dalej.`);
         return this.toAction(false);
     }
   }
@@ -439,10 +439,10 @@ export class Room {
     round.usedLetters.push({ letter, hits });
     if (hits > 0) {
       round.revealed.add(letter);
-      this.addLog("good", `${player.name}: litera ${letter} — trafienia: ${hits}`, player.id);
+      this.addLog("good", `${player.name}: litera ${letter}, trafienia: ${hits}`, player.id);
       this.emitFx({ type: "hit", letter, hits, playerId });
     } else {
-      this.addLog("bad", `${player.name}: litera ${letter} — pudło`, player.id);
+      this.addLog("bad", `${player.name}: litera ${letter}, pudło`, player.id);
       this.emitFx({ type: "miss", letter, playerId });
     }
 
@@ -464,8 +464,13 @@ export class Room {
     if (normalizeAnswer(guess) === normalizeAnswer(round.answer)) return this.winRound(playerId);
 
     const player = this.requirePlayer(playerId);
-    this.addLog("bad", `${player.name} zgaduje „${guess}” — pudło! ${player.name} odpada z rundy.`, player.id);
-    this.eliminate(player.id);
+    // Zwykła pomyłka kosztuje tylko kolejkę; odpada się jedynie przy „Zgadnij lub odpadnij".
+    if (turn.phase === "forcedGuess") {
+      this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło! ${player.name} odpada z rundy.`, player.id);
+      return this.eliminate(player.id);
+    }
+    this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło! ${player.name} traci kolejkę.`, player.id);
+    this.emitFx({ type: "wrongGuess", playerId });
     this.endTurn();
   }
 
@@ -479,7 +484,7 @@ export class Room {
     const player = this.requirePlayer(playerId);
     turn.phase = "forcedGuess";
     turn.targetId = target.id;
-    this.addLog("info", `${player.name} wskazuje: ${target.name} — zgadnij lub odpadnij!`, player.id);
+    this.addLog("info", `${player.name} wskazuje: ${target.name}. Zgadnij lub odpadnij!`, player.id);
     this.armDeadline();
     this.touch();
   }
@@ -514,23 +519,22 @@ export class Room {
     const who = this.getPlayer(this.inputPlayerId() ?? "");
     const away = who && !who.connected;
     if (turn.phase === "forcedGuess" && who) {
-      this.addLog("bad", `${who.name} nie ${away ? "odpowiada" : "zdąża zgadnąć"} — odpada z rundy.`, who.id);
-      this.eliminate(who.id);
-    } else if (who) {
-      this.addLog("bad", `${who.name}: ${away ? "brak gracza" : "czas minął"} — traci kolejkę.`, who.id);
+      this.addLog("bad", `${who.name} nie ${away ? "odpowiada" : "zdąża zgadnąć"} i odpada z rundy.`, who.id);
+      return this.eliminate(who.id);
     }
+    if (who) this.addLog("bad", `${who.name}: ${away ? "brak gracza" : "czas minął"}, traci kolejkę.`, who.id);
     this.endTurn();
   }
 
+  /** Gracz odpada z rundy. Gdy nie ma już kto grać, runda kończy się bez zwycięzcy. */
   private eliminate(playerId: string): void {
     const player = this.requirePlayer(playerId);
     player.status = "eliminated";
     this.emitFx({ type: "eliminated", playerId });
-    if (this.eligiblePlayers().length === 0) {
-      for (const p of this.players) if (p.connected) p.status = "active";
-      this.addLog("system", "Wszyscy odpadli — wszyscy wracają do gry!");
-      this.emitFx({ type: "allBack" });
-    }
+    if (this.eligiblePlayers().length > 0) return this.endTurn();
+    const round = this.requireRound();
+    this.addLog("bad", `Wszyscy odpadli! Pula ${round.pool} pkt przepada. Hasło: „${round.answer}”.`);
+    this.endRound();
   }
 
   private endTurn(steps = 1): void {
@@ -569,15 +573,21 @@ export class Room {
   private winRound(playerId: string): void {
     const round = this.requireRound();
     const player = this.requirePlayer(playerId);
-    this.clearTimer();
-    for (const ch of round.answer) if (isLetter(ch)) round.revealed.add(ch);
     player.score += round.pool;
     player.roundsWon += 1;
     round.winnerId = player.id;
-    round.turn = null;
     this.addLog("good", `${player.name} odgaduje hasło „${round.answer}” i zgarnia ${round.pool} pkt!`, player.id);
     this.emitFx({ type: "roundWin", playerId: player.id });
+    this.endRound();
+  }
 
+  /** Odsłania hasło i po chwili przechodzi do kolejnej rundy albo kończy grę. */
+  private endRound(): void {
+    const round = this.requireRound();
+    this.clearTimer();
+    this.pendingSegment = null;
+    for (const ch of round.answer) if (isLetter(ch)) round.revealed.add(ch);
+    round.turn = null;
     this.phase = "roundEnd";
     this.nextRoundAt = Date.now() + ROUND_END_MS;
     this.timer = setTimeout(() => {
