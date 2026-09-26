@@ -50,7 +50,11 @@ function playFx(fx: Fx, you: string | null) {
     case "wrongGuess":
       return sfx.miss();
     case "pool":
-      return sfx.pool();
+      return fx.amount > 0 ? sfx.pool() : sfx.miss();
+    case "score":
+      return fx.amount > 0 ? sfx.pool() : sfx.miss();
+    case "reveal":
+      return sfx.click();
     case "eliminated":
       return sfx.eliminated();
     case "revived":
@@ -83,7 +87,10 @@ export interface GameApi {
   letter(letter: string): void;
   guess(text: string): Promise<boolean>;
   choice(choice: { mode: "play" } | { mode: "target"; targetId: string }): void;
-  revive(playerId: string): void;
+  /** null = zamiast wskrzeszać, graj dalej. */
+  revive(playerId: string | null): void;
+  give(playerId: string): void;
+  pool(delta: 2 | -2): void;
   skip(): void;
   backToLobby(): void;
   chat(text: string): void;
@@ -206,6 +213,8 @@ export function useGame(profile: ClientProfile): GameApi {
       }),
     choice: (choice) => socket.emit("game:choice", choice),
     revive: (playerId) => socket.emit("game:revive", playerId),
+    give: (playerId) => socket.emit("game:give", playerId),
+    pool: (delta) => socket.emit("game:pool", delta),
     skip: () => socket.emit("game:skip"),
     backToLobby: () => socket.emit("game:lobby"),
     chat: (text) => socket.emit("chat:send", text),

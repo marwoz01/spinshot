@@ -11,29 +11,34 @@ Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekaln
 3. W swojej turze kręcisz kołem. Wylosowane pole decyduje, co możesz zrobić.
 4. Jeśli możesz grać, wpisujesz **jedną spółgłoskę** albo **zgadujesz całe hasło**. Samogłoskę wolno wybrać tylko z pola „możesz wybrać samogłoskę”. Jeśli litera jest w haśle, kręcisz jeszcze raz. Pudło oddaje kolejkę następnej osobie.
 5. Złe hasło kosztuje Cię **kolejkę**. Z rundy odpadasz i zostajesz duchem 👻 tylko przy polu „Zgadnij lub odpadnij”. Jeśli odpadną wszyscy, runda kończy się bez zwycięzcy, a pula przepada.
-6. Kto odgadnie hasło, zgarnia całą pulę. Odkrycie ostatniej litery też liczy się jako odgadnięcie.
-7. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów.
+6. Kto odgadnie hasło, zgarnia całą pulę. Odkrycie ostatniej litery też liczy się jako odgadnięcie. Niektóre pola koła dają albo zabierają punkty od razu, poza pulą.
+7. W grach na 5 i więcej rund runda w połowie gry jest **błyskawiczna** (host może to wyłączyć): nie ma koła, co 5 sekund odsłania się jedna litera, a zgadywać może każdy naraz. Kto pierwszy wpisze hasło, zgarnia 3 pkt. Pomyłka blokuje zgadywanie na 3 sekundy.
+8. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów.
 
 ### Pola na kole
 
 | Pole | Napis na kole | Efekt |
 | --- | --- | --- |
-| Graj dalej (6×) | GRAJ DALEJ | Wpisujesz spółgłoskę albo zgadujesz hasło |
+| Graj dalej (3×) | GRAJ DALEJ | Wpisujesz spółgłoskę albo zgadujesz hasło |
 | +1 / +2 pkt do puli | +1 PKT / +2 PKT DO PULI | Pula rośnie, a Ty grasz dalej |
+| ±2 pkt do puli | ±2 PKT DO PULI | Wybierasz, czy pula rośnie, czy maleje o 2 (nie spada poniżej 1), potem grasz dalej |
+| +1 pkt dla Ciebie | +1 PKT DLA CIEBIE | Dostajesz 1 pkt od razu i grasz dalej |
+| Oddaj 1 pkt | ODDAJ 1 PKT KOMUŚ | Przekazujesz 1 pkt wybranej osobie i grasz dalej. Bez punktów działa jak „Graj dalej” |
+| Ryzykowna litera | RYZYKOWNA LITERA | Grasz dalej, ale pudło w literze kosztuje Cię 1 pkt |
 | Graj dalej, możesz wybrać samogłoskę | SAMOGŁOSKA | W tej turze wolno Ci wpisać samogłoskę |
 | Graj dalej, ale odwracamy kolejkę | ZMIANA KIERUNKU | Grasz, a potem kolejka idzie w drugą stronę |
 | Tracisz kolejkę | TRACISZ KOLEJKĘ | Ruch przechodzi na następną osobę |
 | Ty i kolejna osoba tracicie kolejkę | TRACISZ TY I NASTĘPNY | Następna osoba też zostaje pominięta |
 | Zgadnij lub odpadnij | ZGADNIJ LUB ODPADNIJ | Musisz od razu zgadywać. Błąd albo koniec czasu oznacza, że odpadasz |
 | Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij” | WSKAŻ OFIARĘ | Grasz albo wskazujesz kogoś, kto musi od razu zgadywać |
-| Wskrześ gracza | WSKRZEŚ GRACZA | Przywracasz ducha do gry i grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
+| Wskrześ gracza | WSKRZEŚ +1 PKT | Wskrzeszasz ducha i dostajesz 1 pkt (to kończy Twój ruch) albo grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
 
 Host ustawia limit czasu na ruch: 15, 30, 45 albo 60 s, albo bez limitu. Gdy czas minie, gracz traci kolejkę. Przy „Zgadnij lub odpadnij” odpada. Osoba rozłączona jest pomijana po kilku sekundach, a po odświeżeniu strony wraca do pokoju automatycznie.
 
 ## Konta i postacie
 
 - **Gość**: wpisujesz nick i od razu grasz. Postać zapisuje się w przeglądarce.
-- **Konto**: logowanie przez [Clerk](https://clerk.com) (e-mail i hasło albo Google). Postać i statystyki (gry, wygrane, odgadnięte hasła, punkty) są zapisane na koncie w `publicMetadata` Clerka, więc gra nie potrzebuje bazy danych.
+- **Konto**: logowanie przez [Clerk](https://clerk.com) (e-mail i hasło albo Google). Postać i statystyki (gry, wygrane, odgadnięte hasła, punkty) są zapisane na koncie w `publicMetadata` Clerka, więc gra nie potrzebuje bazy danych. Pod ikoną pucharu jest **ranking** zalogowanych graczy (najpierw punkty, potem wygrane).
 - **Kreator postaci**: 10 kolorów, 3 kształty, 6 rodzajów oczu, 6 buzi i 7 nakryć głowy (albo żadne). Jest też przycisk losowania.
 
 ## Uruchomienie lokalne

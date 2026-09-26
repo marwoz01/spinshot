@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import express, { type Request, type Response } from "express";
 import { Server, type Socket } from "socket.io";
 import type { Ack, ClientProfile, ClientToServer, ServerToClient } from "../shared/types.ts";
-import { clerkEnabled, getProfile, publishableKey, recordGame, saveProfile, verifySession } from "./auth.ts";
+import { clerkEnabled, getProfile, getRanking, publishableKey, recordGame, saveProfile, verifySession } from "./auth.ts";
 import { GameError, Room, type RoomHooks } from "./room.ts";
 
 interface SocketData {
@@ -97,6 +97,18 @@ app.put("/api/profile", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: "Nie udało się zapisać profilu." });
+  }
+});
+
+app.get("/api/ranking", async (req, res) => {
+  if (!clerkEnabled) return res.json({ top: [], you: null });
+  try {
+    // Logowanie jest tu opcjonalne: token służy tylko do pokazania miejsca pytającego gracza.
+    const userId = await verifySession(req.headers.authorization?.replace(/^Bearer\s+/i, ""));
+    res.json(await getRanking(userId));
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: "Nie udało się pobrać rankingu." });
   }
 });
 
@@ -208,7 +220,9 @@ io.on("connection", (socket: GameSocket) => {
   socket.on("game:letter", (letter, ack) => withRoom(socket, ack, (room, id) => room.letter(id, letter)));
   socket.on("game:guess", (text, ack) => withRoom(socket, ack, (room, id) => room.guess(id, text)));
   socket.on("game:choice", (choice) => withRoom(socket, undefined, (room, id) => room.choice(id, choice)));
-  socket.on("game:revive", (targetId) => withRoom(socket, undefined, (room, id) => room.revive(id, targetId)));
+  socket.on("game:revive", (targetId) => withRoom(socket, undefined, (room, id) => room.revive(id, typeof targetId === "string" ? targetId : null)));
+  socket.on("game:give", (targetId) => withRoom(socket, undefined, (room, id) => room.give(id, String(targetId))));
+  socket.on("game:pool", (delta) => withRoom(socket, undefined, (room, id) => room.poolChoice(id, Number(delta))));
   socket.on("game:skip", () => withRoom(socket, undefined, (room, id) => room.skip(id)));
   socket.on("game:lobby", () => withRoom(socket, undefined, (room, id) => room.backToLobby(id)));
   socket.on("chat:send", (text) => withRoom(socket, undefined, (room, id) => room.chat(id, text)));

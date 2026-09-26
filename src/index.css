@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Niskie okno (np. laptop z paskami przeglądarki): mniejsze odstępy, żeby strona mieściła się bez przewijania. */
+@custom-variant short (@media (min-width: 80rem) and (max-height: 50rem));
+
 @theme {
   --font-display: "Paytone One", "Nunito", system-ui, sans-serif;
   --font-sans: "Nunito", system-ui, sans-serif;

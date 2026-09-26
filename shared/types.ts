@@ -17,11 +17,22 @@ export interface RoomSettings {
   rounds: number;
   /** 0 = bez limitu czasu */
   turnSeconds: number;
+  /** Runda w połowie gry jest błyskawiczna: litery odsłaniają się same, wygrywa najszybszy. */
+  speedRound: boolean;
+}
+
+/** Runda błyskawiczna pojawia się tylko w dłuższych grach. */
+export const SPEED_MIN_ROUNDS = 5;
+
+/** Numer rundy błyskawicznej (w połowie gry) albo null, gdy jej nie ma. */
+export function speedRoundNumber(settings: RoomSettings): number | null {
+  if (!settings.speedRound || settings.rounds < SPEED_MIN_ROUNDS) return null;
+  return Math.ceil(settings.rounds / 2);
 }
 
 export const ROUND_OPTIONS = [3, 5, 7, 10] as const;
 export const TIMER_OPTIONS = [0, 15, 30, 45, 60] as const;
-export const DEFAULT_SETTINGS: RoomSettings = { rounds: 5, turnSeconds: 30 };
+export const DEFAULT_SETTINGS: RoomSettings = { rounds: 5, turnSeconds: 30, speedRound: true };
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 12;
 export const MAX_NAME = 16;
@@ -32,13 +43,17 @@ export type TurnPhase =
   | "action" // wpisz literę albo zgaduj hasło
   | "choice" // graj dalej albo wskaż osobę do „Zgadnij lub odpadnij"
   | "forcedGuess" // targetId musi zgadywać, inaczej odpada
-  | "revive"; // wybierz odpadniętego gracza do wskrzeszenia
+  | "revive" // wskrześ ducha za 1 pkt albo graj dalej
+  | "give" // oddaj 1 pkt wybranej osobie
+  | "poolChoice"; // +2 albo -2 do puli
 
 export interface TurnState {
   playerId: string;
   phase: TurnPhase;
   segmentIndex: number | null;
   allowVowel: boolean;
+  /** Pole „Ryzykowna litera": pudło kosztuje 1 pkt. */
+  risky: boolean;
   targetId: string | null;
   /** Znacznik czasu (ms) końca tury albo null, gdy bez limitu. */
   deadline: number | null;
@@ -49,8 +64,15 @@ export interface UsedLetter {
   hits: number;
 }
 
+export type RoundMode = "wheel" | "speed";
+
 export interface RoundState {
   number: number;
+  mode: RoundMode;
+  /** Runda błyskawiczna: kiedy zaczną się odsłaniać litery. */
+  startsAt: number | null;
+  /** Runda błyskawiczna: do kiedy gracz po pomyłce nie może zgadywać (playerId -> ms). */
+  locks: Record<string, number>;
   category: string;
   /** Słowa hasła: litera, null (zakryta) lub znak specjalny. */
   board: (string | null)[][];
@@ -103,6 +125,8 @@ export type Fx =
   | { type: "eliminated"; playerId: string }
   | { type: "revived"; playerId: string }
   | { type: "wrongGuess"; playerId: string }
+  | { type: "score"; playerId: string; amount: number }
+  | { type: "reveal" }
   | { type: "reverse" }
   | { type: "roundWin"; playerId: string }
   | { type: "gameOver" };
@@ -121,7 +145,10 @@ export interface ClientToServer {
   "game:letter": (letter: string, ack: Ack) => void;
   "game:guess": (text: string, ack: Ack) => void;
   "game:choice": (choice: { mode: "play" } | { mode: "target"; targetId: string }) => void;
-  "game:revive": (playerId: string) => void;
+  /** null = zamiast wskrzeszać, graj dalej. */
+  "game:revive": (playerId: string | null) => void;
+  "game:give": (playerId: string) => void;
+  "game:pool": (delta: number) => void;
   "game:skip": () => void;
   "game:lobby": () => void;
   "chat:send": (text: string) => void;
@@ -141,3 +168,16 @@ export interface UserStats {
 }
 
 export const EMPTY_STATS: UserStats = { gamesPlayed: 0, wins: 0, roundsWon: 0, points: 0 };
+
+export interface RankingEntry {
+  place: number;
+  nick: string;
+  avatar: Avatar | null;
+  stats: UserStats;
+}
+
+export interface Ranking {
+  top: RankingEntry[];
+  /** Miejsce zalogowanego gracza (także spoza czołówki) albo null. */
+  you: RankingEntry | null;
+}

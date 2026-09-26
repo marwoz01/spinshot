@@ -4,7 +4,7 @@ import type { RoomState } from "../../shared/types.ts";
 import { useSecondsLeft } from "../clock.ts";
 import { sfx } from "../sfx.ts";
 import type { GameApi } from "../useGame.ts";
-import { ActionPanel } from "./ActionPanel.tsx";
+import { ActionPanel, SpeedPanel } from "./ActionPanel.tsx";
 import { AvatarSvg } from "./AvatarSvg.tsx";
 import { Board } from "./Board.tsx";
 import { LogPanel } from "./LogPanel.tsx";
@@ -25,7 +25,7 @@ function RoundEnd({ room }: { room: RoomState }) {
         ) : (
           <Ghost className="anim-float size-24 fill-lilac text-ink" aria-hidden="true" />
         )}
-        <div className="font-display text-3xl uppercase leading-tight">{winner ? `${winner.name} zgaduje!` : "Wszyscy odpadli!"}</div>
+        <div className="font-display text-3xl uppercase leading-tight">{winner ? `${winner.name} odgaduje hasło!` : round.mode === "speed" ? "Nikt nie odgadł hasła!" : "Wszyscy odpadli!"}</div>
         <div className="text-sm font-black uppercase tracking-wider text-ink-soft">Hasło ({round.category})</div>
         <div className="font-display text-3xl tracking-wide text-grape">{round.answer}</div>
         {winner ? (
@@ -118,10 +118,10 @@ export function Game({ room, you, game }: { room: RoomState; you: string; game: 
   if (!round) return null;
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_290px]">
-      <div className="flex min-w-0 flex-col gap-4">
+    <div className="mx-auto grid max-w-[1600px] grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)_290px] xl:h-full">
+      <div className="flex min-w-0 flex-col gap-4 xl:min-h-0">
         <PlayerList room={room} you={you} />
-        <div className="panel flex flex-wrap justify-center gap-2 p-3">
+        <div className="panel flex shrink-0 flex-wrap justify-center gap-2 p-3">
           {isHost && (
             <button type="button" className="btn btn-sm" disabled={!turn || turn.phase === "spinning"} onClick={game.skip}>
               <SkipForward className="size-4" /> Pomiń ruch
@@ -139,8 +139,8 @@ export function Game({ room, you, game }: { room: RoomState; you: string; game: 
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-4 xl:min-h-0">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="chip !bg-white !px-4 !py-1 !text-base shadow-[0_3px_0_var(--color-ink)]">
             Runda {round.number}/{room.settings.rounds}
           </div>
@@ -153,19 +153,24 @@ export function Game({ room, you, game }: { room: RoomState; you: string; game: 
           </div>
         </div>
 
-        <section className="panel p-4 sm:p-5" aria-label="Plansza">
+        <section className="panel shrink-0 p-4 sm:p-5" aria-label="Plansza">
           <Board board={round.board} category={round.category} />
         </section>
 
-        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="py-4">
-            <Wheel rotation={round.wheelRotation} canSpin={turn?.playerId === you && turn.phase === "spin"} spinning={turn?.phase === "spinning"} onSpin={game.spin} />
+        {round.mode === "speed" ? (
+          <SpeedPanel room={room} you={you} game={game} />
+        ) : (
+          <div className="grid grid-cols-1 items-start gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:items-stretch">
+            {/* Na dużym ekranie koło dopasowuje się do wolnego miejsca (kontener mierzy szerokość i wysokość). */}
+            <div className="py-4 xl:grid xl:place-items-center xl:py-3 xl:[container-type:size]">
+              <Wheel rotation={round.wheelRotation} canSpin={turn?.playerId === you && turn.phase === "spin"} spinning={turn?.phase === "spinning"} onSpin={game.spin} />
+            </div>
+            <ActionPanel room={room} you={you} game={game} />
           </div>
-          <ActionPanel room={room} you={you} game={game} />
-        </div>
+        )}
       </div>
 
-      <LogPanel log={room.log} players={room.players} onSend={game.chat} className="h-[28rem] lg:sticky lg:top-4 lg:h-[calc(100dvh-7rem)]" />
+      <LogPanel log={room.log} players={room.players} onSend={game.chat} className="h-[28rem] lg:sticky lg:top-4 lg:h-[calc(100dvh-7rem)] xl:static xl:h-full" />
 
       {room.phase === "roundEnd" && <RoundEnd room={room} />}
     </div>

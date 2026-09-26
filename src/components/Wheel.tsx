@@ -190,7 +190,7 @@ export function Wheel({ rotation, canSpin, spinning, onSpin }: WheelProps) {
   }, [rotation]);
 
   return (
-    <div className="relative mx-auto aspect-square w-full max-w-[430px]">
+    <div className="relative mx-auto aspect-square w-full max-w-[430px] xl:w-[min(100cqw,100cqh,600px)] xl:max-w-none">
       <div
         className="absolute inset-0"
         style={{

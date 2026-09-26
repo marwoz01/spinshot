@@ -26,16 +26,16 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
   const nameMissing = !profile.name.trim();
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col items-center gap-6">
-      <div className="anim-float flex flex-col items-center pt-2 text-center">
-        <h1 className="logo-text text-[clamp(2.6rem,9vw,5.2rem)] leading-none">Spinshot</h1>
-        <p className="mt-4 max-w-md text-lg font-extrabold text-white/90 drop-shadow-[0_2px_0_rgba(42,22,80,.6)]">
+    <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 xl:min-h-full xl:justify-center xl:gap-4">
+      <div className="anim-float flex flex-col items-center pt-2 text-center xl:pt-0">
+        <h1 className="logo-text text-[clamp(2.6rem,9vw,5.2rem)] leading-none xl:text-[clamp(2.4rem,7.5vh,5.2rem)]">Spinshot</h1>
+        <p className="mt-4 max-w-md text-lg font-extrabold text-white/90 drop-shadow-[0_2px_0_rgba(42,22,80,.6)] xl:mt-2 xl:max-w-none short:hidden">
           Kręć kołem, odkrywaj litery i nie daj się złapać na podchwytliwe hasło!
         </p>
       </div>
 
-      <div className="panel grid w-full grid-cols-1 gap-6 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <section className="flex flex-col items-center gap-4" aria-labelledby="character-title">
+      <div className="panel grid w-full grid-cols-1 gap-6 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-8 xl:p-6 short:p-5">
+        <section className="flex flex-col items-center gap-4 short:gap-3" aria-labelledby="character-title">
           <div className="flex w-full items-center justify-between">
             <h2 id="character-title" className="panel-title">
               Twoja postać
@@ -77,7 +77,7 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
           <h2 id="howto-title" className="panel-title">
             Jak grać?
           </h2>
-          <ol className="grid gap-2.5 sm:grid-cols-2">
+          <ol className="grid gap-2.5">
             {STEPS.map((step, i) => (
               <li key={step.title} className="flex gap-3 rounded-2xl border-[3px] border-ink bg-lilac p-3">
                 <span className="grid size-11 shrink-0 place-items-center rounded-full border-[3px] border-ink bg-white [&>svg]:size-6" aria-hidden="true">

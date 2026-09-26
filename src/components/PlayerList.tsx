@@ -8,7 +8,7 @@ export function PlayerList({ room, you }: { room: RoomState; you: string }) {
   const activeId = turn ? (turn.phase === "forcedGuess" && turn.targetId ? turn.targetId : turn.playerId) : null;
 
   return (
-    <section className="panel p-3" aria-labelledby="gp-title">
+    <section className="panel p-3 xl:flex xl:min-h-0 xl:flex-col" aria-labelledby="gp-title">
       <div className="mb-2 flex items-center justify-between">
         <h2 id="gp-title" className="panel-title !text-base">
           Gracze
@@ -19,7 +19,7 @@ export function PlayerList({ room, you }: { room: RoomState; you: string }) {
           </span>
         )}
       </div>
-      <ol className="scroll-thin flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+      <ol className="scroll-thin flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible xl:min-h-0 xl:overflow-y-auto">
         {room.players.map((p) => {
           const isActive = p.id === activeId;
           const ghost = p.status === "eliminated";

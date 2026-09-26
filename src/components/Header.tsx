@@ -1,13 +1,15 @@
-import { LogOut, Volume2, VolumeX } from "lucide-react";
+import { LogOut, Trophy, Volume2, VolumeX } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useAuthInfo } from "../auth.tsx";
 import { isMuted, setMuted } from "../sfx.ts";
+import { RankingDialog } from "./RankingDialog.tsx";
 
 const ClerkControls = lazy(() => import("../clerk.tsx").then((m) => ({ default: m.ClerkControls })));
 
-export function Header({ compact, onLeave }: { compact: boolean; onLeave?: () => void }) {
+export function Header({ compact, onLeave, showRanking }: { compact: boolean; onLeave?: () => void; showRanking: boolean }) {
   const auth = useAuthInfo();
   const [muted, setMutedState] = useState(isMuted);
+  const [rankingOpen, setRankingOpen] = useState(false);
   return (
     <header className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3">
       {compact ? (
@@ -18,6 +20,11 @@ export function Header({ compact, onLeave }: { compact: boolean; onLeave?: () =>
         <span />
       )}
       <div className="flex items-center gap-2">
+        {showRanking && auth.enabled && (
+          <button type="button" className="btn btn-sm btn-icon" aria-label="Ranking graczy" title="Ranking graczy" onClick={() => setRankingOpen(true)}>
+            <Trophy className="size-5" />
+          </button>
+        )}
         <button
           type="button"
           className="btn btn-sm btn-icon"
@@ -41,6 +48,7 @@ export function Header({ compact, onLeave }: { compact: boolean; onLeave?: () =>
           </Suspense>
         )}
       </div>
+      {rankingOpen && <RankingDialog onClose={() => setRankingOpen(false)} />}
     </header>
   );
 }

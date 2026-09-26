@@ -40,9 +40,9 @@ export function App() {
   const midGame = room?.phase === "playing" || room?.phase === "roundEnd";
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <Header compact={inRoom} onLeave={inRoom && !midGame ? game.leave : undefined} />
-      <main className="flex-1 px-4 pb-10">
+    <div className="flex min-h-dvh flex-col xl:h-dvh">
+      <Header compact={inRoom} onLeave={inRoom && !midGame ? game.leave : undefined} showRanking={!midGame} />
+      <main className="flex-1 px-4 pb-10 xl:min-h-0 xl:overflow-y-auto xl:pb-4">
         {!room || !you ? (
           <Home profile={profile} onProfile={updateProfile} stats={stats} connected={game.connected} onCreate={game.create} onJoin={game.join} />
         ) : room.phase === "lobby" ? (

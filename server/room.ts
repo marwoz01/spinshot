@@ -7,6 +7,7 @@ import {
   MAX_PLAYERS,
   MIN_PLAYERS,
   ROUND_OPTIONS,
+  speedRoundNumber,
   TIMER_OPTIONS,
   type ClientProfile,
   type Fx,
@@ -17,6 +18,7 @@ import {
   type RoomPhase,
   type RoomSettings,
   type RoomState,
+  type RoundMode,
   type TurnPhase,
   type TurnState,
   type UsedLetter,
@@ -31,6 +33,12 @@ export const AWAY_TURN_MS = 8000;
 export const LEAVE_GRACE_MS = 20000;
 /** Po tylu ms pusty pokój jest usuwany. */
 export const EMPTY_ROOM_MS = 60000;
+/** Runda błyskawiczna: odliczanie przed startem, tempo odsłaniania, czas po odsłonięciu wszystkiego, blokada po pomyłce. */
+export const SPEED_INTRO_MS = 4000;
+export const SPEED_REVEAL_MS = 5000;
+export const SPEED_TAIL_MS = 8000;
+export const SPEED_LOCK_MS = 3000;
+export const SPEED_POOL = 3;
 const LOG_LIMIT = 80;
 const CHAT_COOLDOWN_MS = 400;
 
@@ -51,9 +59,14 @@ export interface Player {
 
 interface Round {
   number: number;
+  mode: RoundMode;
   category: string;
   answer: string;
   revealed: Set<string>;
+  /** Runda błyskawiczna: odsłonięte pozycje w haśle (indeksy znaków). */
+  shown: Set<number>;
+  startsAt: number | null;
+  locks: Map<string, number>;
   usedLetters: UsedLetter[];
   pool: number;
   direction: 1 | -1;
@@ -64,6 +77,7 @@ interface Round {
 
 export interface GameResult {
   userId: string;
+  name: string;
   score: number;
   roundsWon: number;
   won: boolean;
@@ -266,6 +280,7 @@ export class Room {
     if (patch.turnSeconds !== undefined && (TIMER_OPTIONS as readonly number[]).includes(patch.turnSeconds)) {
       this.settings.turnSeconds = patch.turnSeconds;
     }
+    if (typeof patch.speedRound === "boolean") this.settings.speedRound = patch.speedRound;
     this.touch();
   }
 
@@ -322,19 +337,29 @@ export class Room {
     for (const p of this.players) p.status = "active";
     this.phase = "playing";
     this.nextRoundAt = null;
+    const speed = number === speedRoundNumber(this.settings);
     this.round = {
       number,
+      mode: speed ? "speed" : "wheel",
       category: password.category,
       answer: password.answer,
       revealed: new Set(),
+      shown: new Set(),
+      startsAt: speed ? Date.now() + SPEED_INTRO_MS : null,
+      locks: new Map(),
       usedLetters: [],
-      pool: 1,
+      pool: speed ? SPEED_POOL : 1,
       direction: 1,
       wheelRotation: this.round?.wheelRotation ?? 0,
       turn: null,
       winnerId: null,
     };
     this.addLog("system", `Runda ${number}/${this.settings.rounds}. Temat: ${password.category}`);
+    if (speed) {
+      this.addLog("system", `Runda błyskawiczna! Litery odsłaniają się same, kto pierwszy wpisze hasło, zgarnia ${SPEED_POOL} pkt.`);
+      this.timer = setTimeout(() => this.revealNext(), SPEED_INTRO_MS);
+      return this.touch();
+    }
     const eligible = this.eligiblePlayers();
     const starter = eligible[(number - 1) % Math.max(1, eligible.length)];
     if (starter) this.startTurn(starter.id);
@@ -380,6 +405,24 @@ export class Room {
         this.emitFx({ type: "pool", amount });
         return this.toAction(false);
       }
+      case "poolChoice":
+        turn.phase = "poolChoice";
+        this.armDeadline();
+        return this.touch();
+      case "bonus":
+        this.addScore(player, 1);
+        this.addLog("good", `${player.name} dostaje 1 pkt!`, player.id);
+        return this.toAction(false);
+      case "give":
+        if (player.score > 0 && this.players.some((p) => p.id !== player.id && p.connected)) {
+          turn.phase = "give";
+          this.armDeadline();
+          return this.touch();
+        }
+        this.addLog("info", `${player.name} nie ma jeszcze punktów do oddania, więc gra dalej.`);
+        return this.toAction(false);
+      case "risky":
+        return this.toAction(false, true);
       case "vowel":
         return this.toAction(true);
       case "reverse":
@@ -416,10 +459,11 @@ export class Room {
     }
   }
 
-  private toAction(allowVowel: boolean): void {
+  private toAction(allowVowel: boolean, risky = false): void {
     const turn = this.requireRound().turn!;
     turn.phase = "action";
     turn.allowVowel = allowVowel;
+    turn.risky = risky;
     this.armDeadline();
     this.touch();
   }
@@ -441,6 +485,10 @@ export class Room {
       round.revealed.add(letter);
       this.addLog("good", `${player.name}: litera ${letter}, trafienia: ${hits}`, player.id);
       this.emitFx({ type: "hit", letter, hits, playerId });
+    } else if (turn.risky && player.score > 0) {
+      this.addLog("bad", `${player.name}: litera ${letter}, pudło i minus 1 pkt`, player.id);
+      this.emitFx({ type: "miss", letter, playerId });
+      this.addScore(player, -1);
     } else {
       this.addLog("bad", `${player.name}: litera ${letter}, pudło`, player.id);
       this.emitFx({ type: "miss", letter, playerId });
@@ -454,6 +502,7 @@ export class Room {
 
   guess(playerId: string, text: string): void {
     const round = this.requireRound();
+    if (round.mode === "speed") return this.speedGuess(playerId, text);
     const turn = round.turn;
     const allowed =
       turn &&
@@ -491,16 +540,47 @@ export class Room {
     this.touch();
   }
 
-  revive(playerId: string, targetId: string): void {
+  /** Wskrzeszenie daje 1 pkt i kończy ruch; `null` oznacza, że gracz woli grać dalej. */
+  revive(playerId: string, targetId: string | null): void {
     this.requireTurn(playerId, "revive");
+    const player = this.requirePlayer(playerId);
+    if (targetId === null) {
+      this.addLog("info", `${player.name} nie wskrzesza nikogo i gra dalej.`, player.id);
+      return this.toAction(false);
+    }
     const target = this.getPlayer(targetId);
     if (!target || target.status !== "eliminated" || !target.connected) {
       throw new GameError("Tej osoby nie można wskrzesić.");
     }
-    const player = this.requirePlayer(playerId);
     target.status = "active";
-    this.addLog("good", `${player.name} wskrzesza: ${target.name}!`, player.id);
+    this.addLog("good", `${player.name} wskrzesza: ${target.name} i zgarnia 1 pkt!`, player.id);
     this.emitFx({ type: "revived", playerId: target.id });
+    this.addScore(player, 1);
+    this.endTurn();
+  }
+
+  give(playerId: string, targetId: string): void {
+    this.requireTurn(playerId, "give");
+    const player = this.requirePlayer(playerId);
+    const target = this.getPlayer(targetId);
+    if (!target || target.id === playerId || !target.connected) throw new GameError("Tej osobie nie można oddać punktu.");
+    if (player.score > 0) {
+      this.addScore(player, -1);
+      this.addScore(target, 1);
+      this.addLog("info", `${player.name} oddaje 1 pkt: ${target.name}.`, player.id);
+    }
+    this.toAction(false);
+  }
+
+  poolChoice(playerId: string, delta: number): void {
+    this.requireTurn(playerId, "poolChoice");
+    if (delta !== 2 && delta !== -2) throw new GameError("Wybierz +2 albo -2.");
+    const round = this.requireRound();
+    const player = this.requirePlayer(playerId);
+    // Pula nie spada poniżej 1 pkt, żeby runda zawsze była coś warta.
+    round.pool = Math.max(1, round.pool + delta);
+    this.addLog("info", `${player.name} ${delta > 0 ? "dokłada 2 pkt do puli" : "zabiera 2 pkt z puli"}. Pula: ${round.pool} pkt.`, player.id);
+    this.emitFx({ type: "pool", amount: delta });
     this.toAction(false);
   }
 
@@ -541,7 +621,7 @@ export class Room {
 
   private endTurn(steps = 1): void {
     const round = this.round;
-    if (!round || this.phase !== "playing") return;
+    if (!round || this.phase !== "playing" || round.mode === "speed") return;
     this.clearTimer();
     this.pendingSegment = null;
     const from = round.turn?.playerId;
@@ -561,6 +641,7 @@ export class Room {
       phase: "spin",
       segmentIndex: null,
       allowVowel: false,
+      risky: false,
       targetId: null,
       deadline: null,
     };
@@ -569,7 +650,42 @@ export class Room {
   }
 
   private resumeIfStalled(): void {
-    if (this.phase === "playing" && this.round && !this.round.turn) this.endTurn();
+    if (this.phase === "playing" && this.round?.mode === "wheel" && !this.round.turn) this.endTurn();
+  }
+
+  // ───────────────────────── runda błyskawiczna ─────────────────────────
+
+  /** Odsłania jedną losową literę; po odsłonięciu wszystkich daje chwilę na wpisanie hasła. */
+  private revealNext(): void {
+    this.timer = null;
+    const round = this.round;
+    if (!round || round.mode !== "speed" || this.phase !== "playing") return;
+    const hidden = [...round.answer].flatMap((ch, i) => (isLetter(ch) && !round.shown.has(i) ? [i] : []));
+    if (hidden.length === 0) {
+      this.addLog("bad", `Nikt nie odgadł hasła. Pula ${round.pool} pkt przepada.`);
+      return this.endRound();
+    }
+    round.shown.add(hidden[Math.floor(this.rng() * hidden.length)]);
+    this.emitFx({ type: "reveal" });
+    this.timer = setTimeout(() => this.revealNext(), hidden.length === 1 ? SPEED_TAIL_MS : SPEED_REVEAL_MS);
+    this.touch();
+  }
+
+  /** W rundzie błyskawicznej zgaduje każdy; pomyłka blokuje gracza na kilka sekund. */
+  private speedGuess(playerId: string, text: string): void {
+    const round = this.requireRound();
+    const player = this.requirePlayer(playerId);
+    if (this.phase !== "playing") throw new GameError("Runda już się skończyła.");
+    const now = Date.now();
+    if (round.startsAt !== null && now < round.startsAt) throw new GameError("Poczekaj na start rundy.");
+    if (now < (round.locks.get(playerId) ?? 0)) throw new GameError("Po pomyłce poczekaj chwilę.");
+    const guess = String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (!guess) throw new GameError("Wpisz hasło.");
+    if (normalizeAnswer(guess) === normalizeAnswer(round.answer)) return this.winRound(playerId);
+    round.locks.set(playerId, now + SPEED_LOCK_MS);
+    this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło!`, player.id);
+    this.emitFx({ type: "wrongGuess", playerId });
+    this.touch();
   }
 
   private winRound(playerId: string): void {
@@ -609,7 +725,7 @@ export class Room {
     this.emitFx({ type: "gameOver" });
     const results = this.players
       .filter((p): p is Player & { userId: string } => Boolean(p.userId))
-      .map((p) => ({ userId: p.userId, score: p.score, roundsWon: p.roundsWon, won: winners.includes(p) }));
+      .map((p) => ({ userId: p.userId, name: p.name, score: p.score, roundsWon: p.roundsWon, won: winners.includes(p) }));
     this.hooks.onGameOver(this, results);
     this.touch();
   }
@@ -709,6 +825,11 @@ export class Room {
     if (this.log.length > LOG_LIMIT) this.log.splice(0, this.log.length - LOG_LIMIT);
   }
 
+  private addScore(player: Player, amount: number): void {
+    player.score = Math.max(0, player.score + amount);
+    this.emitFx({ type: "score", playerId: player.id, amount });
+  }
+
   private emitFx(fx: Fx): void {
     this.hooks.onFx(this, fx);
   }
@@ -762,10 +883,11 @@ export class Room {
       ),
       round: round && {
         number: round.number,
+        mode: round.mode,
+        startsAt: round.startsAt,
+        locks: Object.fromEntries(round.locks),
         category: round.category,
-        board: round.answer
-          .split(" ")
-          .map((word) => [...word].map((ch) => (!isLetter(ch) || round.revealed.has(ch) || finished ? ch : null))),
+        board: boardOf(round, finished),
         usedLetters: [...round.usedLetters],
         pool: round.pool,
         direction: round.direction,
@@ -779,4 +901,17 @@ export class Room {
       serverTime: Date.now(),
     };
   }
+}
+
+/** Słowa hasła do pokazania: litera, null (zakryta) albo znak specjalny. */
+function boardOf(round: Round, finished: boolean): (string | null)[][] {
+  const chars = [...round.answer];
+  const visible = (ch: string, i: number) =>
+    !isLetter(ch) || finished || (round.mode === "speed" ? round.shown.has(i) : round.revealed.has(ch));
+  const words: (string | null)[][] = [[]];
+  chars.forEach((ch, i) => {
+    if (ch === " ") words.push([]);
+    else words[words.length - 1].push(visible(ch, i) ? ch : null);
+  });
+  return words;
 }

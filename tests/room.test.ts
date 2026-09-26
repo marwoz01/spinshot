@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeAnswer } from "../shared/letters.ts";
 import type { Fx } from "../shared/types.ts";
 import { rotationFor, segmentAt, SPIN_MS, WHEEL, type SegmentKind } from "../shared/wheel.ts";
-import { AWAY_TURN_MS, ROUND_END_MS, Room, type GameResult } from "../server/room.ts";
+import { AWAY_TURN_MS, ROUND_END_MS, Room, SPEED_INTRO_MS, SPEED_LOCK_MS, SPEED_POOL, SPEED_REVEAL_MS, SPEED_TAIL_MS, type GameResult } from "../server/room.ts";
 
 const avatar = { color: 0, shape: 0, eyes: 0, mouth: 0, hat: 0 };
 
@@ -204,7 +204,7 @@ describe("pola koła", () => {
     expect(turn(room).playerId).toBe(ids[1]);
   });
 
-  it("wskrzeszenie przywraca odpadniętego gracza i pozwala grać dalej", () => {
+  it("wskrzeszenie przywraca ducha, daje 1 pkt i kończy ruch", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "KOT");
     spinTo(room, ids[0], "guessOrOut");
@@ -213,6 +213,19 @@ describe("pola koła", () => {
     expect(turn(room).phase).toBe("revive");
     room.revive(ids[1], ids[0]);
     expect(room.getPlayer(ids[0])!.status).toBe("active");
+    expect(room.getPlayer(ids[1])!.score).toBe(1);
+    expect(turn(room)).toMatchObject({ playerId: ids[2], phase: "spin" });
+  });
+
+  it("przy wskrzeszeniu można zamiast tego grać dalej", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    spinTo(room, ids[0], "guessOrOut");
+    room.guess(ids[0], "PIES");
+    spinTo(room, ids[1], "revive");
+    room.revive(ids[1], null);
+    expect(room.getPlayer(ids[0])!.status).toBe("eliminated");
+    expect(room.getPlayer(ids[1])!.score).toBe(0);
     expect(turn(room)).toMatchObject({ playerId: ids[1], phase: "action" });
   });
 
@@ -221,6 +234,146 @@ describe("pola koła", () => {
     startWith(room, ids[0], "KOT");
     spinTo(room, ids[0], "revive");
     expect(turn(room).phase).toBe("action");
+  });
+
+  it("+1 pkt dla Ciebie trafia prosto na konto", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    spinTo(room, ids[0], "bonus");
+    expect(room.getPlayer(ids[0])!.score).toBe(1);
+    expect(turn(room).phase).toBe("action");
+  });
+
+  it("oddaj 1 pkt: przekazuje punkt wybranej osobie", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    room.getPlayer(ids[0])!.score = 2;
+    spinTo(room, ids[0], "give");
+    expect(turn(room).phase).toBe("give");
+    expect(() => room.give(ids[0], ids[0])).toThrow();
+    room.give(ids[0], ids[2]);
+    expect(room.getPlayer(ids[0])!.score).toBe(1);
+    expect(room.getPlayer(ids[2])!.score).toBe(1);
+    expect(turn(room).phase).toBe("action");
+  });
+
+  it("oddaj 1 pkt bez punktów działa jak Graj dalej", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    spinTo(room, ids[0], "give");
+    expect(turn(room).phase).toBe("action");
+  });
+
+  it("ryzykowna litera: pudło zabiera 1 pkt, ale nie schodzi poniżej zera", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    room.getPlayer(ids[0])!.score = 1;
+    spinTo(room, ids[0], "risky");
+    expect(turn(room).risky).toBe(true);
+    room.letter(ids[0], "Z");
+    expect(room.getPlayer(ids[0])!.score).toBe(0);
+    spinTo(room, ids[1], "risky");
+    room.letter(ids[1], "P");
+    expect(room.getPlayer(ids[1])!.score).toBe(0);
+  });
+
+  it("±2 do puli: gracz wybiera, a pula nie spada poniżej 1", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "ALA MA KOTA");
+    spinTo(room, ids[0], "poolChoice");
+    expect(turn(room).phase).toBe("poolChoice");
+    expect(() => room.poolChoice(ids[0], 5)).toThrow();
+    room.poolChoice(ids[0], 2);
+    expect(room.round!.pool).toBe(3);
+    room.letter(ids[0], "M");
+    spinTo(room, ids[0], "poolChoice");
+    room.poolChoice(ids[0], -2);
+    room.letter(ids[0], "K");
+    spinTo(room, ids[0], "poolChoice");
+    room.poolChoice(ids[0], -2);
+    expect(room.round!.pool).toBe(1);
+  });
+});
+
+describe("runda błyskawiczna", () => {
+  /** Rozgrywa zwykłe rundy (zgadując hasło) aż do rundy o podanym numerze. */
+  function playUntil(room: Room, number: number) {
+    while (room.round!.number < number) {
+      const current = turn(room).playerId;
+      spinTo(room, current, "play");
+      room.guess(current, room.round!.answer);
+      vi.advanceTimersByTime(ROUND_END_MS);
+    }
+  }
+
+  function speedSetup() {
+    const ctx = setup();
+    ctx.room.settings.rounds = 5;
+    ctx.room.start(ctx.ids[0]);
+    // W grze na 5 rund błyskawiczna jest trzecia, w połowie gry.
+    playUntil(ctx.room, 3);
+    ctx.room.round!.answer = "ALA MA KOTA";
+    return ctx;
+  }
+  const shown = (room: Room) => room.toState().round!.board.flat().filter((ch) => ch !== null).length;
+
+  it("runda w połowie gry jest błyskawiczna i odsłania pojedyncze litery", () => {
+    const { room, ids } = speedSetup();
+    expect(room.round!.mode).toBe("speed");
+    expect(room.round!.turn).toBeNull();
+    expect(room.round!.pool).toBe(SPEED_POOL);
+    expect(() => room.spin(ids[0])).toThrow();
+    expect(() => room.guess(ids[1], "ALA MA KOTA")).toThrow(/start/);
+    expect(shown(room)).toBe(0);
+    vi.advanceTimersByTime(SPEED_INTRO_MS);
+    expect(shown(room)).toBe(1);
+    vi.advanceTimersByTime(SPEED_REVEAL_MS * 2);
+    expect(shown(room)).toBe(3);
+  });
+
+  it("każdy może zgadywać, pomyłka blokuje na chwilę, trafienie wygrywa pulę", () => {
+    const { room, ids } = speedSetup();
+    vi.advanceTimersByTime(SPEED_INTRO_MS);
+    room.guess(ids[2], "OLA MA PSA");
+    expect(() => room.guess(ids[2], "ALA MA KOTA")).toThrow(/poczekaj/i);
+    vi.advanceTimersByTime(SPEED_LOCK_MS);
+    const before = room.getPlayer(ids[1])!.score;
+    room.guess(ids[1], "ala ma kota");
+    expect(room.phase).toBe("roundEnd");
+    expect(room.round!.winnerId).toBe(ids[1]);
+    expect(room.getPlayer(ids[1])!.score).toBe(before + SPEED_POOL);
+  });
+
+  it("gdy nikt nie zgadnie, pula przepada, a gra toczy się dalej kołem", () => {
+    const { room } = speedSetup();
+    // 9 liter: pierwsza po odliczaniu, potem 8 odstępów i czas na wpisanie po ostatniej.
+    vi.advanceTimersByTime(SPEED_INTRO_MS + SPEED_REVEAL_MS * 8);
+    expect(shown(room)).toBe(9);
+    expect(room.phase).toBe("playing");
+    vi.advanceTimersByTime(SPEED_TAIL_MS);
+    expect(room.phase).toBe("roundEnd");
+    expect(room.round!.winnerId).toBeNull();
+    vi.advanceTimersByTime(ROUND_END_MS);
+    expect(room.round).toMatchObject({ number: 4, mode: "wheel" });
+    expect(turn(room).phase).toBe("spin");
+  });
+
+  it("w grze na 3 rundy nie ma rundy błyskawicznej", () => {
+    const { room, ids } = setup();
+    room.updateSettings(ids[0], { rounds: 3 });
+    room.start(ids[0]);
+    for (let r = 1; r <= 3; r++) {
+      expect(room.round).toMatchObject({ number: r, mode: "wheel" });
+      if (r < 3) playUntil(room, r + 1);
+    }
+  });
+
+  it("można ją wyłączyć w ustawieniach", () => {
+    const { room, ids } = setup();
+    room.updateSettings(ids[0], { rounds: 5, speedRound: false });
+    room.start(ids[0]);
+    playUntil(room, 3);
+    expect(room.round!.mode).toBe("wheel");
   });
 });
 
@@ -247,6 +400,7 @@ describe("koniec gry", () => {
   it("po ostatniej rundzie zapisuje wyniki zalogowanych", () => {
     const { room, ids, results } = setup(["Ala", "Bartek"]);
     room.settings.rounds = 3;
+    room.settings.speedRound = false;
     room.start(ids[0]);
     for (let r = 0; r < 3; r++) {
       const current = turn(room).playerId;
