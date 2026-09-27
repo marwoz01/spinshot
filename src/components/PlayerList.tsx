@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, Crown, Ghost, WifiOff } from "lucide-react";
-import type { RoomState } from "../../shared/types.ts";
+import { ArrowDown, ArrowUp, Crown, Ghost, Heart, WifiOff } from "lucide-react";
+import { LIVES, type RoomState } from "../../shared/types.ts";
 import { AvatarSvg } from "./AvatarSvg.tsx";
 
 export function PlayerList({ room, you }: { room: RoomState; you: string }) {
@@ -38,6 +38,13 @@ export function PlayerList({ room, you }: { room: RoomState; you: string }) {
                   <span className="truncate">{p.name}</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs font-black text-ink-soft">
+                  {round?.mode === "wheel" && p.status === "active" && (
+                    <span className="flex shrink-0 gap-px" aria-label={`Życia: ${p.lives} z ${LIVES}`} title={`Życia: ${p.lives} z ${LIVES}`}>
+                      {Array.from({ length: LIVES }, (_, i) => (
+                        <Heart key={i} className={`size-3 ${i < p.lives ? "fill-coral text-ink" : "text-ink/30"}`} />
+                      ))}
+                    </span>
+                  )}
                   {ghost ? (
                     <>
                       <Ghost className="size-3.5" /> duch

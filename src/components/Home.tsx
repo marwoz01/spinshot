@@ -7,7 +7,7 @@ import { AvatarEditor } from "./AvatarEditor.tsx";
 const STEPS = [
   { icon: <FerrisWheel />, title: "Zakręć kołem", text: "Pole na kole decyduje, co możesz zrobić w tej turze." },
   { icon: <CaseSensitive />, title: "Litera albo hasło", text: "Wybierz spółgłoskę albo zgaduj całe hasło. Trafiona litera to kolejny obrót. Samogłoski tylko z koła!" },
-  { icon: <Ghost />, title: "Zgadnij lub odpadnij", text: "Złe hasło kosztuje kolejkę, ale na polu „Zgadnij lub odpadnij” pomyłka zmienia Cię w ducha." },
+  { icon: <Ghost />, title: "Zgadnij lub odpadnij", text: "Złe hasło kosztuje kolejkę. Przy „Zgadnij lub odpadnij” masz 2 życia, bez nich zostajesz duchem." },
 ];
 
 interface HomeProps {
@@ -26,16 +26,16 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
   const nameMissing = !profile.name.trim();
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 xl:min-h-full xl:justify-center xl:gap-4">
-      <div className="anim-float flex flex-col items-center pt-2 text-center xl:pt-0">
+    <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 xl:h-full xl:justify-center xl:gap-4">
+      <div className="anim-float flex flex-col items-center pt-2 text-center xl:shrink-0 xl:pt-0">
         <h1 className="logo-text text-[clamp(2.6rem,9vw,5.2rem)] leading-none xl:text-[clamp(2.4rem,7.5vh,5.2rem)]">Spinshot</h1>
         <p className="mt-4 max-w-md text-lg font-extrabold text-white/90 drop-shadow-[0_2px_0_rgba(42,22,80,.6)] xl:mt-2 xl:max-w-none short:hidden">
           Kręć kołem, odkrywaj litery i nie daj się złapać na podchwytliwe hasło!
         </p>
       </div>
 
-      <div className="panel grid w-full grid-cols-1 gap-6 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:gap-8 xl:p-6 short:p-5">
-        <section className="flex flex-col items-center gap-4 short:gap-3" aria-labelledby="character-title">
+      <div className="panel grid w-full grid-cols-1 gap-6 p-5 sm:p-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] xl:min-h-0 xl:grid-rows-[minmax(0,1fr)] xl:gap-8 xl:p-6 short:p-5">
+        <section className="flex flex-col items-center gap-4 short:gap-3 xl:min-h-0" aria-labelledby="character-title">
           <div className="flex w-full items-center justify-between">
             <h2 id="character-title" className="panel-title">
               Twoja postać
@@ -54,16 +54,17 @@ export function Home({ profile, onProfile, stats, connected, onCreate, onJoin }:
             />
           </label>
           {auth.signedIn && stats && (
-            <dl className="grid w-full max-w-72 grid-cols-4 gap-1.5 text-center">
+            // Jeden niski wiersz zamiast kafelków, żeby strona mieściła się bez przewijania.
+            <dl className="flex flex-wrap justify-center gap-1.5" aria-label="Twoje statystyki">
               {[
                 ["Gry", stats.gamesPlayed],
                 ["Wygrane", stats.wins],
                 ["Hasła", stats.roundsWon],
                 ["Punkty", stats.points],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border-[3px] border-ink bg-lilac px-1 py-1">
-                  <dd className="font-display text-xl leading-none">{value}</dd>
-                  <dt className="text-[0.6rem] font-black uppercase tracking-wide text-ink-soft">{label}</dt>
+                <div key={label} className="chip !gap-1 !bg-lilac">
+                  <dt className="text-ink-soft">{label}</dt>
+                  <dd className="font-display text-sm leading-none">{value}</dd>
                 </div>
               ))}
             </dl>

@@ -3,11 +3,12 @@ import { lockAvatar, sanitizeAvatar, type Avatar } from "../shared/avatar.ts";
 import { isLetter, isVowel, normalizeAnswer } from "../shared/letters.ts";
 import {
   DEFAULT_SETTINGS,
+  LIVES,
   MAX_NAME,
   MAX_PLAYERS,
   MIN_PLAYERS,
+  pickSpeedRound,
   ROUND_OPTIONS,
-  speedRoundNumber,
   TIMER_OPTIONS,
   type ClientProfile,
   type Fx,
@@ -19,6 +20,7 @@ import {
   type RoomSettings,
   type RoomState,
   type RoundMode,
+  type TieChoice,
   type TurnPhase,
   type TurnState,
   type UsedLetter,
@@ -40,6 +42,8 @@ export const SPEED_REVEAL_MS = 5000;
 export const SPEED_TAIL_MS = 8000;
 export const SPEED_LOCK_MS = 3000;
 export const SPEED_POOL = 3;
+/** Ile host ma czasu na wybór przy remisie; potem zostaje wspólne 1. miejsce. */
+export const TIE_DECISION_MS = 30000;
 const LOG_LIMIT = 80;
 const CHAT_COOLDOWN_MS = 400;
 
@@ -57,6 +61,7 @@ export interface Player {
   score: number;
   roundsWon: number;
   status: PlayerStatus;
+  lives: number;
   connected: boolean;
 }
 
@@ -70,6 +75,8 @@ interface Round {
   shown: Set<number>;
   startsAt: number | null;
   locks: Map<string, number>;
+  /** Dogrywka po remisie: tylko ci gracze mogą zgadywać. */
+  tiebreak: string[] | null;
   usedLetters: UsedLetter[];
   pool: number;
   direction: 1 | -1;
@@ -102,6 +109,11 @@ export class Room {
   round: Round | null = null;
   log: LogEntry[] = [];
   nextRoundAt: number | null = null;
+  /** Numer rundy błyskawicznej w tej grze (losowany na starcie, gracze go nie znają). */
+  speedRoundAt: number | null = null;
+  /** Remis na koniec gry, czekający na decyzję hosta. */
+  tie: { playerIds: string[]; decideBy: number } | null = null;
+  private tiebreakPlayed = false;
   rng: () => number = Math.random;
 
   private hooks: RoomHooks;
@@ -155,6 +167,7 @@ export class Room {
       score: 0,
       roundsWon: 0,
       status: "active",
+      lives: LIVES,
       connected: true,
     };
     this.applyProfile(player, profile);
@@ -304,6 +317,9 @@ export class Room {
       p.roundsWon = 0;
     }
     this.usedAnswers.clear();
+    this.tie = null;
+    this.tiebreakPlayed = false;
+    this.speedRoundAt = pickSpeedRound(this.settings, this.rng);
     this.addLog("system", "Gra się zaczyna! Powodzenia!");
     this.startRound(1);
   }
@@ -311,6 +327,7 @@ export class Room {
   backToLobby(playerId: string): void {
     this.requireHost(playerId);
     if (this.phase === "lobby") return;
+    if (this.tie) this.resolveTie("share");
     this.clearTimer();
     this.phase = "lobby";
     this.round = null;
@@ -341,13 +358,16 @@ export class Room {
 
   // ───────────────────────── rozgrywka ─────────────────────────
 
-  private startRound(number: number): void {
+  private startRound(number: number, tiebreak: string[] | null = null): void {
     const password = pickPassword(this.usedAnswers, this.rng);
     this.usedAnswers.add(password.answer);
-    for (const p of this.players) p.status = "active";
+    for (const p of this.players) {
+      p.status = "active";
+      p.lives = LIVES;
+    }
     this.phase = "playing";
     this.nextRoundAt = null;
-    const speed = number === speedRoundNumber(this.settings);
+    const speed = tiebreak !== null || number === this.speedRoundAt;
     this.round = {
       number,
       mode: speed ? "speed" : "wheel",
@@ -357,16 +377,22 @@ export class Room {
       shown: new Set(),
       startsAt: speed ? Date.now() + SPEED_INTRO_MS : null,
       locks: new Map(),
+      tiebreak,
       usedLetters: [],
-      pool: speed ? SPEED_POOL : 1,
+      pool: tiebreak ? 1 : speed ? SPEED_POOL : 1,
       direction: 1,
       wheelRotation: this.round?.wheelRotation ?? 0,
       turn: null,
       winnerId: null,
     };
-    this.addLog("system", `Runda ${number}/${this.settings.rounds}. Temat: ${password.category}`);
+    if (tiebreak) {
+      const names = tiebreak.map((id) => this.getPlayer(id)?.name).filter(Boolean).join(", ");
+      this.addLog("system", `Dogrywka! Zgadują tylko: ${names}. Kto pierwszy odgadnie hasło, wygrywa grę. Temat: ${password.category}`);
+    } else {
+      this.addLog("system", `Runda ${number}/${this.settings.rounds}. Temat: ${password.category}`);
+    }
     if (speed) {
-      this.addLog("system", `Runda błyskawiczna! Litery odsłaniają się same, kto pierwszy wpisze hasło, zgarnia ${SPEED_POOL} pkt.`);
+      if (!tiebreak) this.addLog("system", `Runda błyskawiczna! Litery odsłaniają się same, kto pierwszy wpisze hasło, zgarnia ${SPEED_POOL} pkt.`);
       this.timer = setTimeout(() => this.revealNext(), SPEED_INTRO_MS);
       return this.touch();
     }
@@ -527,8 +553,8 @@ export class Room {
     const player = this.requirePlayer(playerId);
     // Zwykła pomyłka kosztuje tylko kolejkę; odpada się jedynie przy „Zgadnij lub odpadnij".
     if (turn.phase === "forcedGuess") {
-      this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło! ${player.name} odpada z rundy.`, player.id);
-      return this.eliminate(player.id);
+      this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło!`, player.id);
+      return this.loseLife(player.id);
     }
     this.addLog("bad", `${player.name} zgaduje „${guess}”. Pudło! ${player.name} traci kolejkę.`, player.id);
     this.emitFx({ type: "wrongGuess", playerId });
@@ -563,6 +589,7 @@ export class Room {
       throw new GameError("Tej osoby nie można wskrzesić.");
     }
     target.status = "active";
+    target.lives = 1;
     this.addLog("good", `${player.name} wskrzesza: ${target.name} i zgarnia 1 pkt!`, player.id);
     this.emitFx({ type: "revived", playerId: target.id });
     this.addScore(player, 1);
@@ -611,17 +638,31 @@ export class Room {
     const who = this.getPlayer(this.inputPlayerId() ?? "");
     const away = who && !who.connected;
     if (turn.phase === "forcedGuess" && who) {
-      this.addLog("bad", `${who.name} nie ${away ? "odpowiada" : "zdąża zgadnąć"} i odpada z rundy.`, who.id);
-      return this.eliminate(who.id);
+      this.addLog("bad", `${who.name} nie ${away ? "odpowiada" : "zdąża zgadnąć"}.`, who.id);
+      return this.loseLife(who.id);
     }
     if (who) this.addLog("bad", `${who.name}: ${away ? "brak gracza" : "czas minął"}, traci kolejkę.`, who.id);
     this.endTurn();
+  }
+
+  /** Pomyłka przy „Zgadnij lub odpadnij": najpierw przepada życie, bez żyć gracz odpada z rundy. */
+  private loseLife(playerId: string): void {
+    const player = this.requirePlayer(playerId);
+    player.lives = Math.max(0, player.lives - 1);
+    if (player.lives > 0) {
+      this.addLog("bad", `${player.name} traci życie (zostało: ${player.lives}).`, player.id);
+      this.emitFx({ type: "lifeLost", playerId });
+      return this.endTurn();
+    }
+    this.addLog("bad", `${player.name} traci ostatnie życie i odpada z rundy.`, player.id);
+    this.eliminate(player.id);
   }
 
   /** Gracz odpada z rundy. Gdy nie ma już kto grać, runda kończy się bez zwycięzcy. */
   private eliminate(playerId: string): void {
     const player = this.requirePlayer(playerId);
     player.status = "eliminated";
+    player.lives = 0;
     this.emitFx({ type: "eliminated", playerId });
     if (this.eligiblePlayers().length > 0) return this.endTurn();
     const round = this.requireRound();
@@ -688,6 +729,7 @@ export class Room {
     if (this.phase !== "playing") throw new GameError("Runda już się skończyła.");
     const now = Date.now();
     if (round.startsAt !== null && now < round.startsAt) throw new GameError("Poczekaj na start rundy.");
+    if (round.tiebreak && !round.tiebreak.includes(playerId)) throw new GameError("W dogrywce zgadują tylko remisujący.");
     if (now < (round.locks.get(playerId) ?? 0)) throw new GameError("Po pomyłce poczekaj chwilę.");
     const guess = String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (!guess) throw new GameError("Wpisz hasło.");
@@ -726,11 +768,49 @@ export class Room {
     this.touch();
   }
 
+  private leaders(): Player[] {
+    const top = Math.max(0, ...this.players.map((p) => p.score));
+    return this.players.filter((p) => p.score === top && top > 0);
+  }
+
   private finishGame(): void {
     this.phase = "gameOver";
     this.nextRoundAt = null;
-    const top = Math.max(0, ...this.players.map((p) => p.score));
-    const winners = this.players.filter((p) => p.score === top && top > 0);
+    const leaders = this.leaders();
+    // Remis o 1. miejsce (raz na grę): host wybiera dogrywkę albo wspólne zwycięstwo.
+    if (leaders.length > 1 && !this.tiebreakPlayed) {
+      this.tie = { playerIds: leaders.map((p) => p.id), decideBy: Date.now() + TIE_DECISION_MS };
+      this.addLog("system", `Remis! ${leaders.map((p) => p.name).join(" i ")} mają po ${leaders[0].score} pkt. Host wybiera: dogrywka albo wspólne 1. miejsce.`);
+      this.clearTimer();
+      this.timer = setTimeout(() => this.resolveTie("share"), TIE_DECISION_MS);
+      return this.touch();
+    }
+    this.completeGame(leaders);
+  }
+
+  tieChoice(playerId: string, choice: TieChoice): void {
+    this.requireHost(playerId);
+    if (!this.tie) throw new GameError("Nie ma remisu do rozstrzygnięcia.");
+    if (choice !== "playoff" && choice !== "share") throw new GameError("Wybierz dogrywkę albo wspólne 1. miejsce.");
+    this.resolveTie(choice);
+  }
+
+  private resolveTie(choice: TieChoice): void {
+    const tie = this.tie;
+    if (!tie) return;
+    this.tie = null;
+    this.clearTimer();
+    if (choice === "playoff") {
+      this.tiebreakPlayed = true;
+      return this.startRound(this.settings.rounds + 1, tie.playerIds);
+    }
+    this.addLog("system", "Wspólne 1. miejsce!");
+    this.completeGame(this.leaders());
+  }
+
+  /** Ostateczny wynik gry: ogłoszenie i zapis statystyk zalogowanych. */
+  private completeGame(winners: Player[]): void {
+    this.phase = "gameOver";
     this.addLog("system", winners.length ? `Koniec gry! Wygrywa: ${winners.map((w) => w.name).join(", ")}` : "Koniec gry!");
     this.emitFx({ type: "gameOver" });
     const results = this.players
@@ -887,6 +967,7 @@ export class Room {
           score: p.score,
           roundsWon: p.roundsWon,
           status: p.status,
+          lives: p.lives,
           connected: p.connected,
           isGuest: !p.userId,
         }),
@@ -896,6 +977,7 @@ export class Room {
         mode: round.mode,
         startsAt: round.startsAt,
         locks: Object.fromEntries(round.locks),
+        tiebreak: round.tiebreak,
         category: round.category,
         board: boardOf(round, finished),
         usedLetters: [...round.usedLetters],
@@ -908,6 +990,7 @@ export class Room {
       },
       log: [...this.log],
       nextRoundAt: this.nextRoundAt,
+      tie: this.tie && { ...this.tie },
       serverTime: Date.now(),
     };
   }

@@ -95,7 +95,7 @@ export function AvatarEditor({ avatar, onChange, stats }: AvatarEditorProps) {
   const current = TABS.find((t) => t.id === tab) ?? TABS[0];
 
   return (
-    <div className="flex w-full flex-col items-center gap-3">
+    <div className="flex w-full flex-col items-center gap-3 xl:min-h-0 xl:flex-1">
       <div className="relative">
         <div className="grid h-48 w-40 place-items-center overflow-hidden rounded-3xl border-4 border-ink bg-lilac shadow-[0_6px_0_var(--color-ink)] short:h-36 short:w-32">
           <div key={bump} className="anim-pop">
@@ -131,7 +131,7 @@ export function AvatarEditor({ avatar, onChange, stats }: AvatarEditorProps) {
         ))}
       </div>
 
-      <div className="scroll-thin h-44 w-full max-w-md overflow-y-auto rounded-2xl border-[3px] border-ink bg-white p-2.5 short:h-32" role="tabpanel">
+      <div className="scroll-thin h-44 w-full max-w-md overflow-y-auto rounded-2xl border-[3px] border-ink bg-white p-2.5 short:h-32 xl:h-auto xl:max-h-44 xl:min-h-24 xl:flex-1" role="tabpanel">
         <div className="flex flex-col gap-2.5">
           {current.sections.map((section) =>
             section.kind === "colors" ? (

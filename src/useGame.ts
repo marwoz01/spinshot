@@ -1,7 +1,7 @@
 import confetti from "canvas-confetti";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import type { ClientProfile, ClientToServer, Fx, RoomSettings, RoomState, ServerToClient } from "../shared/types.ts";
+import type { ClientProfile, ClientToServer, Fx, RoomSettings, RoomState, ServerToClient, TieChoice } from "../shared/types.ts";
 import { SPIN_MS } from "../shared/wheel.ts";
 import { useAuthInfo } from "./auth.tsx";
 import { syncClock } from "./clock.ts";
@@ -57,6 +57,8 @@ function playFx(fx: Fx, you: string | null) {
       return sfx.click();
     case "eliminated":
       return sfx.eliminated();
+    case "lifeLost":
+      return sfx.miss();
     case "revived":
       return sfx.revive();
     case "reverse":
@@ -91,6 +93,7 @@ export interface GameApi {
   revive(playerId: string | null): void;
   give(playerId: string): void;
   pool(delta: 2 | -2): void;
+  tie(choice: TieChoice): void;
   skip(): void;
   backToLobby(): void;
   chat(text: string): void;
@@ -215,6 +218,7 @@ export function useGame(profile: ClientProfile): GameApi {
     revive: (playerId) => socket.emit("game:revive", playerId),
     give: (playerId) => socket.emit("game:give", playerId),
     pool: (delta) => socket.emit("game:pool", delta),
+    tie: (choice) => socket.emit("game:tie", choice),
     skip: () => socket.emit("game:skip"),
     backToLobby: () => socket.emit("game:lobby"),
     chat: (text) => socket.emit("chat:send", text),

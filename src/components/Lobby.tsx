@@ -161,7 +161,7 @@ export function Lobby({ room, you, game, profile, onProfile, stats }: LobbyProps
             onChange={(turnSeconds) => game.settings({ turnSeconds })}
           />
           <Segmented
-            label={`Runda błyskawiczna w połowie gry${speedPossible ? "" : ` (od ${SPEED_MIN_ROUNDS} rund)`}`}
+            label={`Runda błyskawiczna w losowym momencie${speedPossible ? "" : ` (od ${SPEED_MIN_ROUNDS} rund)`}`}
             options={[1, 0] as const}
             value={room.settings.speedRound && speedPossible ? 1 : 0}
             disabled={!isHost || !speedPossible}

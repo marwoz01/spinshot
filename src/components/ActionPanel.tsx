@@ -98,8 +98,12 @@ export function ActionPanel({ room, you, game }: { room: RoomState; you: string;
   } else if (turn.phase === "forcedGuess" && turn.targetId === you) {
     body = (
       <>
-        <Headline sub={turn.playerId === you ? "Pole „Zgadnij lub odpadnij”. Nie ma odwrotu!" : `${current?.name} wskazuje właśnie Ciebie!`}>
-          Zgadnij albo odpadasz!
+        <Headline
+          sub={`${turn.playerId === you ? "Pole „Zgadnij lub odpadnij”." : `${current?.name} wskazuje właśnie Ciebie!`} ${
+            (me?.lives ?? 1) > 1 ? `Pomyłka zabierze Ci życie (masz ${me?.lives}).` : "To Twoje ostatnie życie!"
+          }`}
+        >
+          {(me?.lives ?? 1) > 1 ? "Zgadnij albo stracisz życie!" : "Zgadnij albo odpadasz!"}
         </Headline>
         <GuessForm big onGuess={game.guess} />
       </>
@@ -212,13 +216,25 @@ export function SpeedPanel({ room, you, game }: { room: RoomState; you: string; 
   const toStart = useSecondsLeft(round.startsAt);
   const lockLeft = useSecondsLeft(round.locks[you] ?? null) ?? 0;
   const started = !toStart;
+  const tiebreakNames = round.tiebreak?.map((id) => room.players.find((p) => p.id === id)?.name ?? "?").join(" i ");
+  const canGuess = !round.tiebreak || round.tiebreak.includes(you);
   return (
     <section className="panel flex flex-col items-center justify-center gap-4 p-5 text-center" aria-label="Runda błyskawiczna">
       <span className="chip !bg-sun !px-4 !py-1 !text-sm shadow-[0_3px_0_var(--color-ink)]">
-        <Zap className="size-4 fill-current" /> Runda błyskawiczna
+        <Zap className="size-4 fill-current" /> {round.tiebreak ? "Dogrywka" : "Runda błyskawiczna"}
       </span>
-      {started ? (
-        <Headline sub={`Litery odsłaniają się same. Kto pierwszy wpisze hasło, zgarnia ${round.pool} pkt.`}>Zgaduj!</Headline>
+      {round.tiebreak && !canGuess ? (
+        <Headline sub="Litery odsłaniają się same. Kto pierwszy odgadnie hasło, wygrywa grę.">Zgadują: {tiebreakNames}</Headline>
+      ) : started ? (
+        <Headline
+          sub={
+            round.tiebreak
+              ? `Litery odsłaniają się same. Kto pierwszy wpisze hasło, wygrywa grę. Grają: ${tiebreakNames}.`
+              : `Litery odsłaniają się same. Kto pierwszy wpisze hasło, zgarnia ${round.pool} pkt.`
+          }
+        >
+          Zgaduj!
+        </Headline>
       ) : (
         <>
           <Headline sub="Litery zaczną się odsłaniać za chwilę.">Przygotuj się!</Headline>
@@ -227,7 +243,7 @@ export function SpeedPanel({ room, you, game }: { room: RoomState; you: string; 
           </div>
         </>
       )}
-      <div className="w-full max-w-md">
+      <div className={`w-full max-w-md ${canGuess ? "" : "hidden"}`}>
         <GuessForm
           big
           onGuess={game.guess}

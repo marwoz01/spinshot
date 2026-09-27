@@ -10,10 +10,10 @@ Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekaln
 2. Każda runda to jedno hasło z tematem. Pula punktów zaczyna się od 1.
 3. W swojej turze kręcisz kołem. Wylosowane pole decyduje, co możesz zrobić.
 4. Jeśli możesz grać, wpisujesz **jedną spółgłoskę** albo **zgadujesz całe hasło**. Samogłoskę wolno wybrać tylko z pola „możesz wybrać samogłoskę”. Jeśli litera jest w haśle, kręcisz jeszcze raz. Pudło oddaje kolejkę następnej osobie.
-5. Złe hasło kosztuje Cię **kolejkę**. Z rundy odpadasz i zostajesz duchem 👻 tylko przy polu „Zgadnij lub odpadnij”. Jeśli odpadną wszyscy, runda kończy się bez zwycięzcy, a pula przepada.
+5. Złe hasło kosztuje Cię **kolejkę**. Przy polu „Zgadnij lub odpadnij” masz w każdej rundzie **2 życia**: pomyłka albo koniec czasu zabiera jedno, a bez żyć odpadasz z rundy i zostajesz duchem 👻. Jeśli odpadną wszyscy, runda kończy się bez zwycięzcy, a pula przepada.
 6. Kto odgadnie hasło, zgarnia całą pulę. Odkrycie ostatniej litery też liczy się jako odgadnięcie. Niektóre pola koła dają albo zabierają punkty od razu, poza pulą.
-7. W grach na 5 i więcej rund runda w połowie gry jest **błyskawiczna** (host może to wyłączyć): nie ma koła, co 5 sekund odsłania się jedna litera, a zgadywać może każdy naraz. Kto pierwszy wpisze hasło, zgarnia 3 pkt. Pomyłka blokuje zgadywanie na 3 sekundy.
-8. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów.
+7. W grach na 5 i więcej rund jedna losowa runda (nigdy pierwsza) jest **błyskawiczna** (host może to wyłączyć): nie ma koła, co 5 sekund odsłania się jedna litera, a zgadywać może każdy naraz. Kto pierwszy wpisze hasło, zgarnia 3 pkt. Pomyłka blokuje zgadywanie na 3 sekundy.
+8. Po ustalonej liczbie rund (3, 5, 7 albo 10) wygrywa osoba z największą liczbą punktów. Przy remisie o 1. miejsce host wybiera **dogrywkę** (runda błyskawiczna tylko dla remisujących, kto pierwszy odgadnie, wygrywa) albo **wspólne 1. miejsce**. Bez decyzji po 30 sekundach zostaje wspólne 1. miejsce.
 
 ### Pola na kole
 
@@ -29,9 +29,9 @@ Imprezowa gra przeglądarkowa dla kilku osób. Wchodzicie do wspólnej poczekaln
 | Graj dalej, ale odwracamy kolejkę | ZMIANA KIERUNKU | Grasz, a potem kolejka idzie w drugą stronę |
 | Tracisz kolejkę | TRACISZ KOLEJKĘ | Ruch przechodzi na następną osobę |
 | Ty i kolejna osoba tracicie kolejkę | TRACISZ TY I NASTĘPNY | Następna osoba też zostaje pominięta |
-| Zgadnij lub odpadnij | ZGADNIJ LUB ODPADNIJ | Musisz od razu zgadywać. Błąd albo koniec czasu oznacza, że odpadasz |
+| Zgadnij lub odpadnij | ZGADNIJ LUB ODPADNIJ | Musisz od razu zgadywać. Błąd albo koniec czasu zabiera życie, a bez żyć odpadasz |
 | Graj dalej albo wybierz osobę do „Zgadnij lub odpadnij” | WSKAŻ OFIARĘ | Grasz albo wskazujesz kogoś, kto musi od razu zgadywać |
-| Wskrześ gracza | WSKRZEŚ +1 PKT | Wskrzeszasz ducha i dostajesz 1 pkt (to kończy Twój ruch) albo grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
+| Wskrześ gracza | WSKRZEŚ +1 PKT | Wskrzeszasz ducha (wraca z 1 życiem) i dostajesz 1 pkt, co kończy Twój ruch, albo grasz dalej. Jeśli nikt nie odpadł, działa jak „Graj dalej” |
 
 Host ustawia limit czasu na ruch: 15, 30, 45 albo 60 s, albo bez limitu. Gdy czas minie, gracz traci kolejkę. Przy „Zgadnij lub odpadnij” odpada. Osoba rozłączona jest pomijana po kilku sekundach, a po odświeżeniu strony wraca do pokoju automatycznie.
 

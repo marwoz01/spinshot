@@ -29,11 +29,12 @@ export function App() {
   const phase = room?.phase;
 
   // Statystyki zapisują się na serwerze po grze — odśwież je chwilę później.
+  const tiePending = Boolean(room?.tie);
   useEffect(() => {
-    if (phase !== "gameOver") return;
+    if (phase !== "gameOver" || tiePending) return;
     const id = setTimeout(refreshStats, 2500);
     return () => clearTimeout(id);
-  }, [phase, refreshStats]);
+  }, [phase, tiePending, refreshStats]);
 
   const inRoom = Boolean(room && you);
   // W trakcie rundy przycisk wyjścia jest w panelu gry, więc nagłówek go nie powtarza.

@@ -237,6 +237,7 @@ io.on("connection", (socket: GameSocket) => {
   socket.on("game:pool", (delta) => withRoom(socket, undefined, (room, id) => room.poolChoice(id, Number(delta))));
   socket.on("game:skip", () => withRoom(socket, undefined, (room, id) => room.skip(id)));
   socket.on("game:lobby", () => withRoom(socket, undefined, (room, id) => room.backToLobby(id)));
+  socket.on("game:tie", (choice) => withRoom(socket, undefined, (room, id) => room.tieChoice(id, choice)));
   socket.on("chat:send", (text) => withRoom(socket, undefined, (room, id) => room.chat(id, text)));
 
   socket.on("disconnect", () => {

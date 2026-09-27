@@ -1,4 +1,4 @@
-import { Coins, Ghost, LogOut, RotateCcw, SkipForward } from "lucide-react";
+import { Coins, Ghost, Handshake, LogOut, RotateCcw, SkipForward, Swords } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { RoomState } from "../../shared/types.ts";
 import { useSecondsLeft } from "../clock.ts";
@@ -19,7 +19,7 @@ function RoundEnd({ room }: { room: RoomState }) {
   return (
     <div className="fixed inset-0 z-30 grid place-items-center bg-ink/55 p-4" role="dialog" aria-modal="true" aria-label="Koniec rundy">
       <div className="panel anim-pop flex w-full max-w-xl flex-col items-center gap-3 p-6 text-center">
-        <div className="chip !bg-sun">Runda {round.number} zakończona</div>
+        <div className="chip !bg-sun">{round.tiebreak ? "Dogrywka zakończona" : `Runda ${round.number} zakończona`}</div>
         {winner ? (
           <AvatarSvg avatar={winner.avatar} mood="happy" size={150} className="anim-float" />
         ) : (
@@ -41,44 +41,78 @@ function RoundEnd({ room }: { room: RoomState }) {
   );
 }
 
+/** Decyzja przy remisie: host wybiera dogrywkę albo wspólne 1. miejsce; po czasie zostaje remis. */
+function TieDecision({ room, you, game }: { room: RoomState; you: string; game: GameApi }) {
+  const tie = room.tie!;
+  const seconds = useSecondsLeft(tie.decideBy);
+  const names = tie.playerIds.map((id) => room.players.find((p) => p.id === id)?.name ?? "?");
+  const score = room.players.find((p) => p.id === tie.playerIds[0])?.score ?? 0;
+  const isHost = room.hostId === you;
+  return (
+    <div className="fixed inset-0 z-30 grid place-items-center bg-ink/55 p-4" role="dialog" aria-modal="true" aria-label="Remis">
+    <div className="panel anim-pop flex w-full max-w-xl flex-col items-center gap-3 p-6 text-center">
+      <div className="font-display text-3xl uppercase leading-tight">Remis!</div>
+      <p className="text-sm font-bold text-ink-soft">
+        {names.join(" i ")} mają po {score} pkt. {isHost ? "Rozstrzygacie dogrywką czy dzielicie się zwycięstwem?" : "Host wybiera: dogrywka czy wspólne 1. miejsce."}
+      </p>
+      {isHost && (
+        <div className="flex flex-wrap justify-center gap-3">
+          <button type="button" className="btn btn-coral" onClick={() => game.tie("playoff")}>
+            <Swords className="size-5" /> Dogrywka
+          </button>
+          <button type="button" className="btn btn-mint" onClick={() => game.tie("share")}>
+            <Handshake className="size-5" /> Wspólne 1. miejsce
+          </button>
+        </div>
+      )}
+      <p className="text-xs font-black text-ink-soft">Bez decyzji za {seconds ?? 0} s zostanie wspólne 1. miejsce.</p>
+    </div>
+    </div>
+  );
+}
+
 function GameOver({ room, you, game }: { room: RoomState; you: string; game: GameApi }) {
   const ranking = [...room.players].sort((a, b) => b.score - a.score || b.roundsWon - a.roundsWon);
   const top = ranking[0]?.score ?? 0;
+  // Równe punkty = to samo miejsce (ex aequo).
+  const placeOf = (score: number) => 1 + ranking.filter((p) => p.score > score).length;
   const podium = [ranking[1], ranking[0], ranking[2]];
-  const heights = ["h-24", "h-36", "h-16"];
-  const places = [2, 1, 3];
+  const heightFor = (place: number) => (place === 1 ? "h-36" : place === 2 ? "h-24" : "h-16");
+  const colorFor = (place: number) => (place === 1 ? "bg-sun" : place === 2 ? "bg-sky" : "bg-coral");
   const isHost = room.hostId === you;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col items-center gap-6">
-      <h1 className="logo-text text-center text-[clamp(2.4rem,8vw,4.5rem)] leading-none">Koniec gry!</h1>
-      <div className="panel w-full p-6">
+    <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 xl:h-full xl:justify-center xl:gap-5">
+      <h1 className="logo-text text-center text-[clamp(2.4rem,8vw,4.5rem)] leading-none xl:text-[clamp(2.4rem,8vh,4.5rem)]">Koniec gry!</h1>
+      {room.tie && <TieDecision room={room} you={you} game={game} />}
+      <div className="grid w-full gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:min-h-0">
+      <div className="panel flex flex-col justify-end p-6">
         <div className="flex items-end justify-center gap-3 sm:gap-6">
-          {podium.map((p, i) =>
-            p ? (
+          {podium.map((p, i) => {
+            if (!p) return <div key={i} className="w-28 sm:w-36" />;
+            const place = placeOf(p.score);
+            return (
               <div key={p.id} className="flex w-28 flex-col items-center sm:w-36">
-                <AvatarSvg avatar={p.avatar} mood={p.score === top && top > 0 ? "happy" : "normal"} size={places[i] === 1 ? 150 : 116} className={places[i] === 1 ? "anim-float" : ""} />
+                <AvatarSvg avatar={p.avatar} mood={p.score === top && top > 0 ? "happy" : "normal"} size={place === 1 ? 150 : 116} className={place === 1 ? "anim-float" : ""} />
                 <div className="w-full truncate text-center font-display text-lg">{p.name}</div>
                 <div className="text-sm font-black text-ink-soft">{p.score} pkt</div>
                 <div
-                  className={`mt-1 grid w-full place-items-center rounded-t-2xl border-[3px] border-b-0 border-ink font-display text-4xl text-white ${heights[i]} ${
-                    places[i] === 1 ? "bg-sun" : places[i] === 2 ? "bg-sky" : "bg-coral"
-                  }`}
+                  className={`mt-1 grid w-full place-items-center rounded-t-2xl border-[3px] border-b-0 border-ink font-display text-4xl text-white ${heightFor(place)} ${colorFor(place)}`}
                   style={{ WebkitTextStroke: "2px var(--color-ink)" }}
                 >
-                  {places[i]}
+                  {place}
                 </div>
               </div>
-            ) : (
-              <div key={i} className="w-28 sm:w-36" />
-            ),
-          )}
+            );
+          })}
         </div>
         <div className="h-1 rounded bg-ink" />
-        <ol className="mt-5 space-y-1.5">
-          {ranking.map((p, i) => (
+      </div>
+      <div className="flex min-h-0 flex-col gap-5">
+        <ol className="panel scroll-thin min-h-0 space-y-1.5 overflow-y-auto p-4">
+          {ranking.map((p) => (
             <li key={p.id} className={`flex items-center gap-3 rounded-2xl border-[3px] border-ink px-3 py-1.5 ${p.id === you ? "bg-[#fff4c7]" : "bg-lilac"}`}>
-              <span className="w-6 font-display text-xl">{i + 1}.</span>
+              <span className="w-6 font-display text-xl">{placeOf(p.score)}.</span>
               <AvatarSvg avatar={p.avatar} size={36} />
               <span className="flex-1 truncate font-display text-lg">{p.name}</span>
               <span className="text-sm font-black text-ink-soft">
@@ -88,14 +122,15 @@ function GameOver({ room, you, game }: { room: RoomState; you: string; game: Gam
             </li>
           ))}
         </ol>
+        {room.tie ? null : isHost ? (
+          <button type="button" className="btn btn-sun w-full !py-4 !text-2xl" onClick={game.backToLobby}>
+            <RotateCcw className="size-6" /> Zagraj ponownie
+          </button>
+        ) : (
+          <p className="text-center font-display text-xl text-white drop-shadow-[0_2px_0_rgba(42,22,80,.7)]">Czekamy, aż host zdecyduje, co dalej…</p>
+        )}
       </div>
-      {isHost ? (
-        <button type="button" className="btn btn-sun !px-10 !py-4 !text-2xl" onClick={game.backToLobby}>
-          <RotateCcw className="size-6" /> Zagraj ponownie
-        </button>
-      ) : (
-        <p className="font-display text-xl text-white drop-shadow-[0_2px_0_rgba(42,22,80,.7)]">Czekamy, aż host zdecyduje, co dalej…</p>
-      )}
+      </div>
     </div>
   );
 }
@@ -142,7 +177,7 @@ export function Game({ room, you, game }: { room: RoomState; you: string; game: 
       <div className="flex min-w-0 flex-col gap-4 xl:min-h-0">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="chip !bg-white !px-4 !py-1 !text-base shadow-[0_3px_0_var(--color-ink)]">
-            Runda {round.number}/{room.settings.rounds}
+            {round.tiebreak ? "Dogrywka" : `Runda ${round.number}/${room.settings.rounds}`}
           </div>
           <div className="chip !bg-sun !px-4 !py-1 !text-base shadow-[0_3px_0_var(--color-ink)]" aria-label={`Pula punktów: ${round.pool}`}>
             <Coins className="size-4" /> Pula:

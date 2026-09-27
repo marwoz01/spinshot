@@ -118,13 +118,13 @@ function useWheelFont(): boolean {
   return ready;
 }
 
+/** Pola, napisy i ćwieki koła (bez obrotu, żeby nie przeliczać ich przy każdym zakręceniu). */
 const WheelFace = memo(function WheelFace() {
   const fontReady = useWheelFont();
   const texts = useMemo(() => (fontReady ? WHEEL.map((seg) => layoutText(seg.lines)) : null), [fontReady]);
 
   return (
-    <svg viewBox="-250 -250 500 500" className="size-full drop-shadow-[0_10px_0_rgba(42,22,80,0.55)]" aria-hidden="true">
-      <circle r="246" fill="#1d1233" />
+    <>
       {WHEEL.map((seg, i) => {
         const text = texts?.[i];
         return (
@@ -159,14 +159,7 @@ const WheelFace = memo(function WheelFace() {
         const [x, y] = point(i * SEGMENT_ANGLE, 238);
         return <circle key={i} cx={x} cy={y} r="4" fill="#cfc4e8" stroke="#1d1233" strokeWidth="1.5" />;
       })}
-      <defs>
-        <radialGradient id="wheel-shade">
-          <stop offset="0.2" stopColor="#000" stopOpacity="0.18" />
-          <stop offset="0.45" stopColor="#000" stopOpacity="0" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0.08" />
-        </radialGradient>
-      </defs>
-    </svg>
+    </>
   );
 });
 
@@ -191,15 +184,27 @@ export function Wheel({ rotation, canSpin, spinning, onSpin }: WheelProps) {
 
   return (
     <div className="relative mx-auto aspect-square w-full max-w-[430px] xl:w-[min(100cqw,100cqh,600px)] xl:max-w-none">
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: `rotate(${rotation}deg)`,
-          transition: animate ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.72, 0.16, 1)` : "none",
-        }}
-      >
-        <WheelFace />
-      </div>
+      {/* Obracamy grupę wewnątrz SVG, a nie cały element: obrócone rogi prostokąta rozpychałyby stronę, a cień kręciłby się z kołem. */}
+      <svg viewBox="-250 -250 500 500" className="absolute inset-0 size-full drop-shadow-[0_10px_0_rgba(42,22,80,0.55)]" aria-hidden="true">
+        <defs>
+          <radialGradient id="wheel-shade">
+            <stop offset="0.2" stopColor="#000" stopOpacity="0.18" />
+            <stop offset="0.45" stopColor="#000" stopOpacity="0" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0.08" />
+          </radialGradient>
+        </defs>
+        <circle r="246" fill="#1d1233" />
+        <g
+          style={{
+            transform: `rotate(${rotation}deg)`,
+            transformBox: "view-box",
+            transformOrigin: "0 0",
+            transition: animate ? `transform ${SPIN_MS}ms cubic-bezier(0.12, 0.72, 0.16, 1)` : "none",
+          }}
+        >
+          <WheelFace />
+        </g>
+      </svg>
 
       {/* wskaźnik */}
       <svg viewBox="0 0 60 70" className="absolute left-1/2 top-[-4%] w-[13%] -translate-x-1/2 drop-shadow-[0_4px_0_rgba(42,22,80,0.6)]" aria-hidden="true">

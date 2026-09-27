@@ -9,6 +9,8 @@ export interface PublicPlayer {
   score: number;
   roundsWon: number;
   status: PlayerStatus;
+  /** Życia w bieżącej rundzie: pomyłka przy „Zgadnij lub odpadnij" zabiera jedno. */
+  lives: number;
   connected: boolean;
   isGuest: boolean;
 }
@@ -17,17 +19,17 @@ export interface RoomSettings {
   rounds: number;
   /** 0 = bez limitu czasu */
   turnSeconds: number;
-  /** Runda w połowie gry jest błyskawiczna: litery odsłaniają się same, wygrywa najszybszy. */
+  /** Jedna losowa runda (nie pierwsza) jest błyskawiczna: litery odsłaniają się same, wygrywa najszybszy. */
   speedRound: boolean;
 }
 
 /** Runda błyskawiczna pojawia się tylko w dłuższych grach. */
 export const SPEED_MIN_ROUNDS = 5;
 
-/** Numer rundy błyskawicznej (w połowie gry) albo null, gdy jej nie ma. */
-export function speedRoundNumber(settings: RoomSettings): number | null {
+/** Losuje numer rundy błyskawicznej (od 2. do ostatniej) albo zwraca null, gdy jej nie ma. */
+export function pickSpeedRound(settings: RoomSettings, rng: () => number = Math.random): number | null {
   if (!settings.speedRound || settings.rounds < SPEED_MIN_ROUNDS) return null;
-  return Math.ceil(settings.rounds / 2);
+  return 2 + Math.floor(rng() * (settings.rounds - 1));
 }
 
 export const ROUND_OPTIONS = [3, 5, 7, 10] as const;
@@ -36,6 +38,8 @@ export const DEFAULT_SETTINGS: RoomSettings = { rounds: 5, turnSeconds: 30, spee
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 12;
 export const MAX_NAME = 16;
+/** Ile pomyłek przy „Zgadnij lub odpadnij" wytrzymuje gracz w jednej rundzie. */
+export const LIVES = 2;
 
 export type TurnPhase =
   | "spin" // czeka na zakręcenie
@@ -73,6 +77,8 @@ export interface RoundState {
   startsAt: number | null;
   /** Runda błyskawiczna: do kiedy gracz po pomyłce nie może zgadywać (playerId -> ms). */
   locks: Record<string, number>;
+  /** Dogrywka po remisie: tylko ci gracze mogą zgadywać. */
+  tiebreak: string[] | null;
   category: string;
   /** Słowa hasła: litera, null (zakryta) lub znak specjalny. */
   board: (string | null)[][];
@@ -107,6 +113,8 @@ export interface RoomState {
   round: RoundState | null;
   log: LogEntry[];
   nextRoundAt: number | null;
+  /** Remis na koniec gry: host wybiera dogrywkę albo wspólne 1. miejsce do `decideBy`. */
+  tie: { playerIds: string[]; decideBy: number } | null;
   /** Czas serwera w chwili wysłania — klient liczy z niego przesunięcie zegara. */
   serverTime: number;
 }
@@ -123,6 +131,7 @@ export type Fx =
   | { type: "miss"; letter: string; playerId: string }
   | { type: "pool"; amount: number }
   | { type: "eliminated"; playerId: string }
+  | { type: "lifeLost"; playerId: string }
   | { type: "revived"; playerId: string }
   | { type: "wrongGuess"; playerId: string }
   | { type: "score"; playerId: string; amount: number }
@@ -130,6 +139,8 @@ export type Fx =
   | { type: "reverse" }
   | { type: "roundWin"; playerId: string }
   | { type: "gameOver" };
+
+export type TieChoice = "playoff" | "share";
 
 export type Ack<T = object> = (res: ({ ok: true } & T) | { ok: false; error: string }) => void;
 
@@ -151,6 +162,7 @@ export interface ClientToServer {
   "game:pool": (delta: number) => void;
   "game:skip": () => void;
   "game:lobby": () => void;
+  "game:tie": (choice: TieChoice) => void;
   "chat:send": (text: string) => void;
 }
 

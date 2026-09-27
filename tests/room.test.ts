@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sanitizeAvatar } from "../shared/avatar.ts";
 import { normalizeAnswer } from "../shared/letters.ts";
-import type { Fx } from "../shared/types.ts";
+import { DEFAULT_SETTINGS, pickSpeedRound, type Fx } from "../shared/types.ts";
 import { rotationFor, segmentAt, SPIN_MS, WHEEL, type SegmentKind } from "../shared/wheel.ts";
-import { AWAY_TURN_MS, ROUND_END_MS, Room, SPEED_INTRO_MS, SPEED_LOCK_MS, SPEED_POOL, SPEED_REVEAL_MS, SPEED_TAIL_MS, type GameResult } from "../server/room.ts";
+import { AWAY_TURN_MS, ROUND_END_MS, Room, SPEED_INTRO_MS, SPEED_LOCK_MS, SPEED_POOL, SPEED_REVEAL_MS, SPEED_TAIL_MS, TIE_DECISION_MS, type GameResult } from "../server/room.ts";
 
 const avatar = sanitizeAvatar({ color: 0, shape: 0, eyes: 0, mouth: 0, hat: 0 });
 
@@ -36,6 +36,11 @@ function spinTo(room: Room, playerId: string, kind: SegmentKind) {
 }
 
 const turn = (room: Room) => room.round!.turn!;
+
+/** Zostawia graczowi ostatnie życie, żeby kolejna pomyłka przy „Zgadnij lub odpadnij” go wyeliminowała. */
+const lastLife = (room: Room, id: string) => {
+  room.getPlayer(id)!.lives = 1;
+};
 
 beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
@@ -121,13 +126,33 @@ describe("tura", () => {
     expect(turn(room).playerId).toBe(ids[1]);
   });
 
-  it("złe hasło przy „Zgadnij lub odpadnij” eliminuje z rundy", () => {
+  it("złe hasło przy „Zgadnij lub odpadnij” zabiera życie, a po drugim razie eliminuje", () => {
+    const { room, ids } = setup();
+    startWith(room, ids[0], "KOT");
+    expect(room.getPlayer(ids[0])!.lives).toBe(2);
+    spinTo(room, ids[0], "guessOrOut");
+    room.guess(ids[0], "PIES");
+    expect(room.getPlayer(ids[0])).toMatchObject({ status: "active", lives: 1 });
+    expect(turn(room).playerId).toBe(ids[1]);
+    spinTo(room, ids[1], "play");
+    room.letter(ids[1], "Z");
+    spinTo(room, ids[2], "play");
+    room.letter(ids[2], "P");
+    spinTo(room, ids[0], "guessOrOut");
+    room.guess(ids[0], "MYSZ");
+    expect(room.getPlayer(ids[0])).toMatchObject({ status: "eliminated", lives: 0 });
+  });
+
+  it("życia odnawiają się w każdej rundzie", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "KOT");
     spinTo(room, ids[0], "guessOrOut");
     room.guess(ids[0], "PIES");
-    expect(room.getPlayer(ids[0])!.status).toBe("eliminated");
-    expect(turn(room).playerId).toBe(ids[1]);
+    expect(room.getPlayer(ids[0])!.lives).toBe(1);
+    spinTo(room, ids[1], "play");
+    room.guess(ids[1], "KOT");
+    vi.advanceTimersByTime(ROUND_END_MS);
+    expect(room.players.every((p) => p.lives === 2)).toBe(true);
   });
 
   it("gdy wszyscy odpadną, runda kończy się bez zwycięzcy", () => {
@@ -136,8 +161,10 @@ describe("tura", () => {
     spinTo(room, ids[0], "plus2");
     room.letter(ids[0], "Z");
     spinTo(room, ids[1], "guessOrOut");
+    lastLife(room, ids[1]);
     room.guess(ids[1], "nie");
     spinTo(room, ids[0], "guessOrOut");
+    lastLife(room, ids[0]);
     room.guess(ids[0], "też nie");
     expect(room.players.every((p) => p.status === "eliminated")).toBe(true);
     expect(room.phase).toBe("roundEnd");
@@ -188,6 +215,7 @@ describe("pola koła", () => {
     spinTo(room, ids[0], "guessOrOut");
     expect(turn(room)).toMatchObject({ phase: "forcedGuess", targetId: ids[0] });
     expect(() => room.letter(ids[0], "K")).toThrow();
+    lastLife(room, ids[0]);
     vi.advanceTimersByTime(30_000);
     expect(room.getPlayer(ids[0])!.status).toBe("eliminated");
     expect(turn(room).playerId).toBe(ids[1]);
@@ -200,6 +228,7 @@ describe("pola koła", () => {
     expect(turn(room).phase).toBe("choice");
     room.choice(ids[0], { mode: "target", targetId: ids[2] });
     expect(() => room.guess(ids[0], "KOT")).toThrow();
+    lastLife(room, ids[2]);
     room.guess(ids[2], "PIES");
     expect(room.getPlayer(ids[2])!.status).toBe("eliminated");
     expect(turn(room).playerId).toBe(ids[1]);
@@ -209,11 +238,12 @@ describe("pola koła", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "KOT");
     spinTo(room, ids[0], "guessOrOut");
+    lastLife(room, ids[0]);
     room.guess(ids[0], "PIES");
     spinTo(room, ids[1], "revive");
     expect(turn(room).phase).toBe("revive");
     room.revive(ids[1], ids[0]);
-    expect(room.getPlayer(ids[0])!.status).toBe("active");
+    expect(room.getPlayer(ids[0])).toMatchObject({ status: "active", lives: 1 });
     expect(room.getPlayer(ids[1])!.score).toBe(1);
     expect(turn(room)).toMatchObject({ playerId: ids[2], phase: "spin" });
   });
@@ -222,6 +252,7 @@ describe("pola koła", () => {
     const { room, ids } = setup();
     startWith(room, ids[0], "KOT");
     spinTo(room, ids[0], "guessOrOut");
+    lastLife(room, ids[0]);
     room.guess(ids[0], "PIES");
     spinTo(room, ids[1], "revive");
     room.revive(ids[1], null);
@@ -310,15 +341,30 @@ describe("runda błyskawiczna", () => {
   function speedSetup() {
     const ctx = setup();
     ctx.room.settings.rounds = 5;
+    // Losowanie rundy błyskawicznej: 2 + floor(0.3 * 4) = 3.
+    ctx.room.rng = () => 0.3;
     ctx.room.start(ctx.ids[0]);
-    // W grze na 5 rund błyskawiczna jest trzecia, w połowie gry.
+    expect(ctx.room.speedRoundAt).toBe(3);
     playUntil(ctx.room, 3);
     ctx.room.round!.answer = "ALA MA KOTA";
     return ctx;
   }
+
+  it("losuje rundę błyskawiczną od drugiej do ostatniej, nigdy pierwszą", () => {
+    const settings = { ...DEFAULT_SETTINGS, rounds: 7 };
+    expect(pickSpeedRound(settings, () => 0)).toBe(2);
+    expect(pickSpeedRound(settings, () => 0.999)).toBe(7);
+    for (let i = 0; i < 200; i++) {
+      const n = pickSpeedRound(settings)!;
+      expect(n).toBeGreaterThanOrEqual(2);
+      expect(n).toBeLessThanOrEqual(7);
+    }
+    expect(pickSpeedRound({ ...settings, rounds: 3 })).toBeNull();
+    expect(pickSpeedRound({ ...settings, speedRound: false })).toBeNull();
+  });
   const shown = (room: Room) => room.toState().round!.board.flat().filter((ch) => ch !== null).length;
 
-  it("runda w połowie gry jest błyskawiczna i odsłania pojedyncze litery", () => {
+  it("wylosowana runda jest błyskawiczna i odsłania pojedyncze litery", () => {
     const { room, ids } = speedSetup();
     expect(room.round!.mode).toBe("speed");
     expect(room.round!.turn).toBeNull();
@@ -433,5 +479,62 @@ describe("koło i litery", () => {
   it("porównuje hasła bez polskich znaków i interpunkcji", () => {
     expect(normalizeAnswer("  Żółć, gęślą!  ")).toBe(normalizeAnswer("zolc gesla"));
     expect(normalizeAnswer("Pat i Mat")).not.toBe(normalizeAnswer("Pat i Mata"));
+  });
+});
+
+describe("remis na koniec gry", () => {
+  /** Jedna runda: Ala wygrywa ją za 1 pkt i zrównuje się z Bartkiem, który ma już 1 pkt. */
+  function tieSetup() {
+    const ctx = setup(["Ala", "Bartek", "Celina"]);
+    ctx.room.settings.rounds = 1;
+    ctx.room.settings.speedRound = false;
+    ctx.room.start(ctx.ids[0]);
+    ctx.room.getPlayer(ctx.ids[1])!.score = 1;
+    spinTo(ctx.room, ctx.ids[0], "play");
+    ctx.room.guess(ctx.ids[0], ctx.room.round!.answer);
+    vi.advanceTimersByTime(ROUND_END_MS);
+    return ctx;
+  }
+
+  it("host wybiera, a bez decyzji po czasie zostaje wspólne 1. miejsce", () => {
+    const { room, ids, results } = tieSetup();
+    expect(room.phase).toBe("gameOver");
+    expect(room.tie?.playerIds).toEqual([ids[0], ids[1]]);
+    expect(results).toHaveLength(0);
+    expect(() => room.tieChoice(ids[1], "share")).toThrow(/host/i);
+    vi.advanceTimersByTime(TIE_DECISION_MS);
+    expect(room.tie).toBeNull();
+    expect(results[0][0]).toMatchObject({ userId: "user_1", won: true });
+  });
+
+  it("dogrywka: zgadują tylko remisujący, a trafienie wygrywa grę", () => {
+    const { room, ids, results } = tieSetup();
+    room.tieChoice(ids[0], "playoff");
+    expect(room.round).toMatchObject({ mode: "speed", tiebreak: [ids[0], ids[1]], pool: 1 });
+    vi.advanceTimersByTime(SPEED_INTRO_MS);
+    expect(() => room.guess(ids[2], room.round!.answer)).toThrow(/remisujący/);
+    room.guess(ids[1], room.round!.answer);
+    vi.advanceTimersByTime(ROUND_END_MS);
+    expect(room.phase).toBe("gameOver");
+    expect(room.tie).toBeNull();
+    expect(room.getPlayer(ids[1])!.score).toBe(2);
+    expect(results[0][0]).toMatchObject({ userId: "user_1", won: false });
+  });
+
+  it("dogrywka bez odgadnięcia kończy się wspólnym 1. miejscem", () => {
+    const { room, ids, results } = tieSetup();
+    room.tieChoice(ids[0], "playoff");
+    room.round!.answer = "KOT";
+    vi.advanceTimersByTime(SPEED_INTRO_MS + SPEED_REVEAL_MS * 2 + SPEED_TAIL_MS + ROUND_END_MS);
+    expect(room.phase).toBe("gameOver");
+    expect(room.tie).toBeNull();
+    expect(results[0][0]).toMatchObject({ userId: "user_1", won: true });
+  });
+
+  it("powrót do poczekalni w trakcie remisu też zapisuje wyniki", () => {
+    const { room, ids, results } = tieSetup();
+    room.backToLobby(ids[0]);
+    expect(room.phase).toBe("lobby");
+    expect(results).toHaveLength(1);
   });
 });
